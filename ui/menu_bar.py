@@ -1,0 +1,62 @@
+import tkinter as tk
+
+
+def create_menu_bar(editor):
+    menubar = tk.Menu(editor.root)
+
+    file_menu = tk.Menu(menubar, tearoff=0)
+    file_menu.add_command(label="New (Temp)", command=editor.new_temp_document, accelerator="Ctrl+N")
+    file_menu.add_command(label="Mở PDF", command=editor.open_pdf, accelerator="Ctrl+O")
+    file_menu.add_command(label="Lưu PDF", command=editor.save_pdf, accelerator="Ctrl+S")
+    file_menu.add_command(label="Lưu thành...", command=editor.save_as_pdf)
+    file_menu.add_command(label="Xuất PDF", command=editor.export_pdf)
+    file_menu.add_separator()
+    file_menu.add_command(label="In PDF", command=editor.print_pdf, accelerator="Ctrl+P")
+    file_menu.add_separator()
+    file_menu.add_command(label="Thoát", command=editor.root.quit)
+    menubar.add_cascade(label="Tệp", menu=file_menu)
+
+    edit_menu = tk.Menu(menubar, tearoff=0)
+    edit_menu.add_command(label="Hoàn tác", command=editor.undo, accelerator="Ctrl+Z")
+    edit_menu.add_command(label="Làm lại", command=editor.redo, accelerator="Ctrl+Y")
+    edit_menu.add_separator()
+    edit_menu.add_command(label="Xóa tất cả", command=editor.clear_elements)
+    menubar.add_cascade(label="Chỉnh sửa", menu=edit_menu)
+
+    insert_menu = tk.Menu(menubar, tearoff=0)
+    insert_menu.add_command(label="Chữ", command=editor.add_text)
+    insert_menu.add_command(label="Ảnh", command=editor.add_image)
+    insert_menu.add_separator()
+    insert_menu.add_command(label="OCR Trang hiện tại...", command=editor.ocr_current_page_dialog)
+    insert_menu.add_command(label="OCR Tất cả các trang...", command=editor.ocr_all_pages_dialog)
+    insert_menu.add_separator()
+    insert_menu.add_command(label="Đường", command=lambda: editor.start_drawing("line"))
+    insert_menu.add_command(label="Hình chữ nhật", command=lambda: editor.start_drawing("rect"))
+    insert_menu.add_command(label="Ellipse", command=lambda: editor.start_drawing("ellipse"))
+    insert_menu.add_command(label="Tam giác", command=lambda: editor.start_drawing("triangle"))
+    menubar.add_cascade(label="Chèn", menu=insert_menu)
+
+    format_menu = tk.Menu(menubar, tearoff=0)
+    format_menu.add_command(label="Tô đậm", command=editor.toggle_bold, accelerator="Ctrl+B")
+    format_menu.add_command(label="Nghiêng", command=editor.toggle_italic, accelerator="Ctrl+I")
+    format_menu.add_command(label="Gạch chân", command=editor.toggle_underline, accelerator="Ctrl+U")
+    format_menu.add_separator()
+    format_menu.add_command(label="Căn trái", command=lambda: editor.set_alignment("left"))
+    format_menu.add_command(label="Căn giữa", command=lambda: editor.set_alignment("center"))
+    format_menu.add_command(label="Căn phải", command=lambda: editor.set_alignment("right"))
+    menubar.add_cascade(label="Định dạng", menu=format_menu)
+
+    view_menu = tk.Menu(menubar, tearoff=0)
+    view_menu.add_command(label="Trang trước", command=editor.previous_page, accelerator="Ctrl+Left")
+    view_menu.add_command(label="Trang sau", command=editor.next_page, accelerator="Ctrl+Right")
+    view_menu.add_separator()
+    view_menu.add_command(label="Phóng to", command=lambda: editor.set_zoom(editor.zoom_level + 10), accelerator="Ctrl++")
+    view_menu.add_command(label="Thu nhỏ", command=lambda: editor.set_zoom(editor.zoom_level - 10), accelerator="Ctrl+-")
+    view_menu.add_command(label="Phù hợp trang", command=lambda: editor.set_zoom(100))
+    menubar.add_cascade(label="Xem", menu=view_menu)
+
+    help_menu = tk.Menu(menubar, tearoff=0)
+    help_menu.add_command(label="Về ứng dụng", command=editor.show_about)
+    menubar.add_cascade(label="Trợ giúp", menu=help_menu)
+
+    editor.root.configure(menu=menubar)

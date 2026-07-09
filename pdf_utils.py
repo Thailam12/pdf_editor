@@ -62,11 +62,18 @@ class PDFUtils:
             "justify": 3,
         }.get(alignment, 0)
 
+    def _normalize_element(self, elem):
+        if isinstance(elem, (tuple, list)):
+            return elem[0], elem[1]
+        if hasattr(elem, 'to_tuple'):
+            return elem.to_tuple()
+        return "", {}
+
     def save_edited_pdf(self, input_path, output_path, elements):
         doc = pymupdf.open(input_path)
         try:
             for elem in elements:
-                etype, params = elem
+                etype, params = self._normalize_element(elem)
                 page_number = params.get("page", 0)
                 if page_number < 0 or page_number >= len(doc):
                     continue

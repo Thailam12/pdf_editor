@@ -33,16 +33,17 @@ def add_image_tool(editor):
     
     def apply():
         try:
-            editor.undo_redo_manager.save_state(editor.elements)
-            editor.elements.append(("image", {
-                "path": img_path,
-                "x": x_var.get() * 72,  # Convert to points
-                "y": y_var.get() * 72,
-                "w": w_var.get() * 72,
-                "h": h_var.get() * 72,
-                "page": editor.current_page
-            }))
-            editor.update_preview()
+            editor.undo_manager.save_state(editor.elements)
+            from models import ImageElement
+            editor.elements.append(ImageElement(
+                path=img_path,
+                x=x_var.get() * 72,
+                y=y_var.get() * 72,
+                w=w_var.get() * 72,
+                h=h_var.get() * 72,
+                page=editor.current_page
+            ))
+            editor.canvas_manager.update_preview()
             editor.update_info_panel()
             dialog.destroy()
         except Exception as e:

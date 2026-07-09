@@ -63,36 +63,40 @@ class DrawingTool:
         if abs(end_x - self.start_x) < 5 and abs(end_y - self.start_y) < 5:
             self.editor.status.configure(text="Vẽ bị hủy: Kích thước quá nhỏ")
         else:
-            self.editor.undo_redo_manager.save_state(self.editor.elements)
+            from models import LineElement, ShapeElement
+            self.editor.undo_manager.save_state(self.editor.elements)
             if self.shape_type == "line":
-                self.editor.elements.append(("line", {
-                    "x1": self.start_x, "y1": self.start_y,
-                    "x2": end_x, "y2": end_y,
-                    "color": "red", "width": 2,
-                    "page": self.editor.current_page
-                }))
+                self.editor.elements.append(LineElement(
+                    x1=self.start_x, y1=self.start_y,
+                    x2=end_x, y2=end_y,
+                    color="red", width=2,
+                    page=self.editor.current_page
+                ))
             elif self.shape_type == "rect":
-                self.editor.elements.append(("rect", {
-                    "x": self.start_x, "y": self.start_y,
-                    "w": end_x - self.start_x, "h": end_y - self.start_y,
-                    "color": "red",
-                    "page": self.editor.current_page
-                }))
+                self.editor.elements.append(ShapeElement(
+                    shape_type="rect",
+                    x=self.start_x, y=self.start_y,
+                    w=end_x - self.start_x, h=end_y - self.start_y,
+                    color="red",
+                    page=self.editor.current_page
+                ))
             elif self.shape_type == "ellipse":
-                self.editor.elements.append(("ellipse", {
-                    "x": self.start_x, "y": self.start_y,
-                    "w": end_x - self.start_x, "h": end_y - self.start_y,
-                    "color": "red",
-                    "page": self.editor.current_page
-                }))
+                self.editor.elements.append(ShapeElement(
+                    shape_type="ellipse",
+                    x=self.start_x, y=self.start_y,
+                    w=end_x - self.start_x, h=end_y - self.start_y,
+                    color="red",
+                    page=self.editor.current_page
+                ))
             elif self.shape_type == "triangle":
-                self.editor.elements.append(("triangle", {
-                    "x": self.start_x, "y": self.start_y,
-                    "w": end_x - self.start_x, "h": end_y - self.start_y,
-                    "color": "red",
-                    "page": self.editor.current_page
-                }))
-            self.editor.update_preview()
+                self.editor.elements.append(ShapeElement(
+                    shape_type="triangle",
+                    x=self.start_x, y=self.start_y,
+                    w=end_x - self.start_x, h=end_y - self.start_y,
+                    color="red",
+                    page=self.editor.current_page
+                ))
+            self.editor.canvas_manager.update_preview()
             self.editor.update_info_panel()
             self.editor.status.configure(text=f"Đã vẽ {self.shape_type}")
 
@@ -100,6 +104,8 @@ class DrawingTool:
         self.editor.canvas_preview.unbind("<B1-Motion>")
         self.editor.canvas_preview.unbind("<ButtonRelease-1>")
         self.editor.canvas_preview.bind("<Button-1>", self.editor.on_canvas_click)
+        self.editor.canvas_preview.bind("<B1-Motion>", self.editor.on_canvas_drag)
+        self.editor.canvas_preview.bind("<ButtonRelease-1>", self.editor.on_canvas_release)
         self.editor.canvas_preview.bind("<Motion>", self.editor.on_canvas_motion)
         self.editor.canvas_preview.configure(cursor="cross")
         self.shape_type = None

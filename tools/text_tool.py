@@ -86,21 +86,22 @@ def add_text_tool(editor):
             messagebox.showwarning("Cảnh báo", "Vui lòng nhập nội dung!")
             return
 
-        editor.undo_redo_manager.save_state(editor.elements)
-        editor.elements.append(("text", {
-            "text": text_var.get(),
-            "x": x_var.get() * 72,  # Convert inches to points
-            "y": y_var.get() * 72,
-            "size": size_var.get(),
-            "font_name": font_var.get(),
-            "color": current_color,
-            "bold": bold_var.get(),
-            "italic": italic_var.get(),
-            "underline": underline_var.get(),
-            "alignment": alignment_var.get(),
-            "page": editor.current_page
-        }))
-        editor.update_preview()
+        editor.undo_manager.save_state(editor.elements)
+        from models import TextElement
+        editor.elements.append(TextElement(
+            text=text_var.get(),
+            x=x_var.get() * 72,
+            y=y_var.get() * 72,
+            size=size_var.get(),
+            font_name=font_var.get(),
+            color=current_color,
+            bold=bold_var.get(),
+            italic=italic_var.get(),
+            underline=underline_var.get(),
+            alignment=alignment_var.get(),
+            page=editor.current_page
+        ))
+        editor.canvas_manager.update_preview()
         editor.update_info_panel()
         dialog.destroy()
     
