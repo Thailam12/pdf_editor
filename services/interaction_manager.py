@@ -1,4 +1,5 @@
 import tkinter as tk
+import math
 
 HANDLE_SIZE = 8
 
@@ -51,6 +52,7 @@ class InteractionManager:
         self.resize_orig_params = None
         self._freehand_drawing = False
         self._freehand_points = []
+        self._tail_dragging = False
 
     def get_resize_handle_at(self, x, y):
         canvas = self.editor.canvas_preview
@@ -79,6 +81,7 @@ class InteractionManager:
         all_prefixes = [
             "text_", "img_", "shape_", "line_", "hl_", "ann_", "note_",
             "stamp_", "sig_", "fh_", "link_", "redact_", "wm_", "ff_", "hf_",
+            "meas_", "co_", "tb_", "vid_", "aud_", "bc_",
         ]
         for item in reversed(items):
             for tag in canvas.gettags(item):
@@ -111,6 +114,7 @@ class InteractionManager:
     def on_canvas_click(self, event):
         self.dragging = False
         self.resizing = False
+        self._tail_dragging = False
         editor = self.editor
         tool = getattr(editor, "active_tool", "select")
 
@@ -122,6 +126,34 @@ class InteractionManager:
                 self._freehand_points = [(px, py)]
             else:
                 self._freehand_points.append((px, py))
+            return
+
+        if tool == "measurement":
+            scale = editor.zoom_level / 100
+            px, py = event.x / scale, event.y / scale
+            if not hasattr(editor, "_measurement_points"):
+                editor._measurement_points = []
+            editor._measurement_points.append((px, py))
+            if len(editor._measurement_points) >= 2:
+                from models.elements import MeasurementElement
+                pts = editor._measurement_points
+                editor.undo_manager.save_state(editor.elements)
+                elem = MeasurementElement(
+                    x1=pts[0][0], y1=pts[0][1],
+                    x2=pts[-1][0], y2=pts[-1][1],
+                    points_list=list(pts),
+                    measurement_type="distance" if len(pts) == 2 else "perimeter",
+                    unit=getattr(editor, "measurement_unit", "mm"),
+                    scale=getattr(editor, "measurement_scale", 1.0),
+                    color=getattr(editor, "stroke_color", "#FF0000"),
+                    page=editor.current_page,
+                )
+                editor.elements.append(elem)
+                editor._measurement_points = []
+                editor.canvas_manager.update_preview()
+                editor.status.configure(text="Measurement added")
+            else:
+                editor.status.configure(text=f"Point {len(editor._measurement_points)} set - click to add more, double-click to finish")
             return
 
         if tool == "eraser":
@@ -153,9 +185,20 @@ class InteractionManager:
 
         editor.selected_element = eid
         elem = editor.elements[eid]
-        self.dragging = True
         scale = editor.zoom_level / 100
 
+        # Check for callout tail drag
+        if _get_elem_type(elem) == "callout" and hasattr(elem, "tail_x"):
+            tx_s, ty_s = elem.tail_x * scale, elem.tail_y * scale
+            if abs(event.x - tx_s) < 12 and abs(event.y - ty_s) < 12:
+                self._tail_dragging = True
+                self.drag_offset = (event.x / scale - elem.tail_x,
+                                    event.y / scale - elem.tail_y)
+                self.drag_orig_params = _elem_to_params(elem)
+                editor.canvas_manager.update_preview()
+                return
+
+        self.dragging = True
         if _get_elem_type(elem) == "line":
             if isinstance(elem, tuple):
                 self.drag_offset = (event.x / scale - elem[1]['x1'],
@@ -176,7 +219,10 @@ class InteractionManager:
         elem = self.editor.elements[self.editor.selected_element]
         scale = self.editor.zoom_level / 100
 
-        if isinstance(elem, tuple):
+        if self._tail_dragging and _get_elem_type(elem) == "callout":
+            elem.tail_x = max(0, event.x / scale - self.drag_offset[0])
+            elem.tail_y = max(0, event.y / scale - self.drag_offset[1])
+        elif isinstance(elem, tuple):
             self._do_drag_tuple(event, elem, scale)
         else:
             if self.resizing:
@@ -205,10 +251,12 @@ class InteractionManager:
             self._freehand_points = []
             return
 
-        if self.dragging or self.resizing:
-            self.editor.undo_manager.save_state(self.editor.elements)
+        if self.dragging or self.resizing or self._tail_dragging:
+            if self._tail_dragging:
+                self.editor.undo_manager.save_state(self.editor.elements)
             self.dragging = False
             self.resizing = False
+            self._tail_dragging = False
 
     def on_canvas_motion(self, event):
         if self._freehand_drawing:
@@ -220,6 +268,105 @@ class InteractionManager:
             canvas.configure(cursor="hand2")
         else:
             canvas.configure(cursor="cross")
+
+    def on_canvas_double_click(self, event):
+        editor = self.editor
+        eid = self._find_element_id_at(event.x, event.y)
+        if eid is None:
+            return
+        editor.selected_element = eid
+        elem = editor.elements[eid]
+        etype = _get_elem_type(elem)
+
+        if etype == "textbox":
+            self._edit_textbox_text(elem)
+        elif etype == "video":
+            self._show_media_properties(elem, "Video")
+        elif etype == "audio":
+            self._show_media_properties(elem, "Audio")
+        elif etype == "callout":
+            self._edit_callout_text(elem)
+        editor.canvas_manager.update_preview()
+
+    def _edit_textbox_text(self, elem):
+        editor = self.editor
+        dialog = tk.Toplevel(editor.root)
+        dialog.title("Edit Text Box")
+        dialog.geometry("400x300")
+        dialog.transient(editor.root)
+        dialog.grab_set()
+
+        tk.Label(dialog, text="Text:").pack(anchor="w", padx=10, pady=(10, 0))
+        text_var = tk.StringVar(value=elem.text)
+        text_widget = tk.Text(dialog, height=10, wrap="word")
+        text_widget.pack(fill="both", expand=True, padx=10, pady=5)
+        text_widget.insert("1.0", elem.text)
+        text_widget.focus_set()
+
+        btn_frame = tk.Frame(dialog)
+        btn_frame.pack(pady=10)
+
+        def apply_text():
+            editor.undo_manager.save_state(editor.elements)
+            elem.text = text_widget.get("1.0", "end-1c")
+            editor.canvas_manager.update_preview()
+            dialog.destroy()
+
+        tk.Button(btn_frame, text="OK", command=apply_text, width=10).pack(side="left", padx=5)
+        tk.Button(btn_frame, text="Cancel", command=dialog.destroy, width=10).pack(side="left", padx=5)
+
+    def _edit_callout_text(self, elem):
+        editor = self.editor
+        dialog = tk.Toplevel(editor.root)
+        dialog.title("Edit Callout Text")
+        dialog.geometry("400x300")
+        dialog.transient(editor.root)
+        dialog.grab_set()
+
+        tk.Label(dialog, text="Text:").pack(anchor="w", padx=10, pady=(10, 0))
+        text_widget = tk.Text(dialog, height=10, wrap="word")
+        text_widget.pack(fill="both", expand=True, padx=10, pady=5)
+        text_widget.insert("1.0", elem.text)
+        text_widget.focus_set()
+
+        btn_frame = tk.Frame(dialog)
+        btn_frame.pack(pady=10)
+
+        def apply_text():
+            editor.undo_manager.save_state(editor.elements)
+            elem.text = text_widget.get("1.0", "end-1c")
+            editor.canvas_manager.update_preview()
+            dialog.destroy()
+
+        tk.Button(btn_frame, text="OK", command=apply_text, width=10).pack(side="left", padx=5)
+        tk.Button(btn_frame, text="Cancel", command=dialog.destroy, width=10).pack(side="left", padx=5)
+
+    def _show_media_properties(self, elem, media_type):
+        editor = self.editor
+        dialog = tk.Toplevel(editor.root)
+        dialog.title(f"{media_type} Properties")
+        dialog.geometry("350x200")
+        dialog.transient(editor.root)
+        dialog.grab_set()
+
+        info_frame = tk.Frame(dialog)
+        info_frame.pack(fill="both", expand=True, padx=10, pady=10)
+
+        tk.Label(info_frame, text=f"{media_type} Properties",
+                 font=("Arial", 12, "bold")).pack(anchor="w", pady=(0, 10))
+        tk.Label(info_frame, text=f"File: {elem.file_path or 'None'}",
+                 anchor="w", wraplength=320).pack(anchor="w")
+        if hasattr(elem, "duration"):
+            tk.Label(info_frame, text=f"Duration: {elem.duration}s",
+                     anchor="w").pack(anchor="w")
+        if hasattr(elem, "w"):
+            tk.Label(info_frame, text=f"Size: {int(elem.w)} x {int(elem.h)}",
+                     anchor="w").pack(anchor="w")
+        if hasattr(elem, "poster_image_path") and elem.poster_image_path:
+            tk.Label(info_frame, text=f"Poster: {elem.poster_image_path}",
+                     anchor="w", wraplength=320).pack(anchor="w")
+
+        tk.Button(dialog, text="Close", command=dialog.destroy, width=10).pack(pady=10)
 
     def _do_drag_tuple(self, event, elem, scale):
         etype, params = elem
@@ -273,7 +420,8 @@ class InteractionManager:
             orig_size = self.resize_orig_params.get("size", 12)
             elem.size = max(8, int(orig_size + (dx + dy) / 2 * 0.6))
         elif etype in ("image", "shape", "highlight", "annotation",
-                       "stamp", "signature", "link", "redact", "formfield"):
+                       "stamp", "signature", "link", "redact", "formfield",
+                       "textbox", "video", "barcode", "callout"):
             ow = self.resize_orig_params.get("w", 50)
             oh = self.resize_orig_params.get("h", 50)
             ox = self.resize_orig_params.get("x", 0)
@@ -298,19 +446,32 @@ class InteractionManager:
         ny = max(0, event.y / scale - self.drag_offset[1])
         etype = _get_elem_type(elem)
 
-        if etype == "line":
+        if etype in ("line", "measurement"):
             orig = self.drag_orig_params
-            dx = nx - (orig.get("x1", elem.x1) if orig else elem.x1)
-            dy = ny - (orig.get("y1", elem.y1) if orig else elem.y1)
             if orig:
-                elem.x1 = orig.get("x1", elem.x1)
-                elem.y1 = orig.get("y1", elem.y1)
+                x1_key, y1_key = ("x1", "y1")
+                dx = nx - (orig.get(x1_key, elem.x1))
+                dy = ny - (orig.get(y1_key, elem.y1))
+                elem.x1 = orig.get(x1_key, elem.x1)
+                elem.y1 = orig.get(y1_key, elem.y1)
                 elem.x2 = orig.get("x2", elem.x2)
                 elem.y2 = orig.get("y2", elem.y2)
-            elem.x1 += dx
-            elem.y1 += dy
-            elem.x2 += dx
-            elem.y2 += dy
+                elem.x1 += dx
+                elem.y1 += dy
+                elem.x2 += dx
+                elem.y2 += dy
+                if etype == "measurement" and hasattr(elem, "points_list") and elem.points_list:
+                    elem.points_list = [(p[0] + dx, p[1] + dy) for p in orig.get("points_list", elem.points_list)]
+        elif etype == "callout":
+            elem.x = nx
+            elem.y = ny
+            if self.drag_orig_params:
+                orig_tx = self.drag_orig_params.get("tail_x", elem.tail_x)
+                orig_ty = self.drag_orig_params.get("tail_y", elem.tail_y)
+                dx = nx - self.drag_orig_params.get("x", elem.x)
+                dy = ny - self.drag_orig_params.get("y", elem.y)
+                elem.tail_x = orig_tx + dx
+                elem.tail_y = orig_ty + dy
         elif etype == "freehand":
             orig_pts = self.drag_orig_params.get("points", [])
             if orig_pts and hasattr(elem, "points"):

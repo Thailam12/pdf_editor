@@ -12,11 +12,25 @@ from services import (
     SearchService, SecurityService, RedactionService,
     ExportService, AIService, FormService,
     LinkService, HeaderFooterService,
+    CompareService, CompressService, SpellCheckService,
+    TextToSpeechService, MeasurementService, PdfAService,
+    BatesService, AutomationService, AccessibilityService,
+    BackgroundService, ArticleService, PrintService,
+    IndexService, BookmarkImportService, ClipboardService,
+    SnapService,
 )
 from ui.ribbon import create_ribbon, update_ribbon_state
 from ui.page_panel import PagePanel
 from ui.layers_panel import LayersPanel
 from ui.status_bar import create_status_bar, update_status
+from ui.property_panel import PropertyPanel
+from ui.shortcut_overlay import ShortcutOverlay
+from ui.theme_manager import ThemeManager
+from ui.find_toolbar import FindToolbar
+from ui.zoom_widget import ZoomWidget
+from ui.navigation_panel import NavigationPanel
+from ui.toolbar_manager import ToolbarManager
+from ui.context_menu import ContextMenuManager
 from ui.feature_dialogs import (
     stamp_dialog, signature_dialog, watermark_dialog,
     ocr_dialog, protect_dialog, bookmarks_dialog,
@@ -56,6 +70,17 @@ class PDFEditor:
         self.stroke_color = "#FF0000"
         self.stroke_width = 2
         self.fill_color = "#4A90D9"
+        self.ocr_running = False
+
+        self.colors = {
+            "bg": "#1e1e2e",
+            "bg_secondary": "#181825",
+            "bg_surface": "#313244",
+            "text": "#cdd6f4",
+            "accent": "#89b4fa",
+            "border": "#45475a",
+            "selection": "#585b70",
+        }
 
         self.pdf_utils = PDFUtils()
 
@@ -78,42 +103,57 @@ class PDFEditor:
         self.header_footer_service = HeaderFooterService(self)
         self.ocr_manager = OCRManager(self)
 
+        self.compare_service = CompareService(self)
+        self.compress_service = CompressService(self)
+        self.spellcheck_service = SpellCheckService(self)
+        self.tts_service = TextToSpeechService(self)
+        self.measurement_service = MeasurementService(self)
+        self.pdfa_service = PdfAService(self)
+        self.bates_service = BatesService(self)
+        self.automation_service = AutomationService(self)
+        self.accessibility_service = AccessibilityService(self)
+        self.background_service = BackgroundService(self)
+        self.article_service = ArticleService(self)
+        self.print_service = PrintService(self)
+        self.index_service = IndexService(self)
+        self.bookmark_import_service = BookmarkImportService(self)
+        self.clipboard_service = ClipboardService(self)
+        self.snap_service = SnapService(self)
+
         self._action_counter = 0
 
-        self._apply_theme()
+        # Theme manager (all classmethods, no instance needed)
+        from ui.theme_manager import ThemeManager
+        self.theme_manager = ThemeManager
+        ThemeManager.apply_theme("Catppuccin Dark")
+
+        # UI Components
+        from ui.property_panel import PropertyPanel
+        from ui.shortcut_overlay import ShortcutOverlay
+        from ui.find_toolbar import FindToolbar
+        from ui.zoom_widget import ZoomWidget
+        from ui.navigation_panel import NavigationPanel
+        from ui.toolbar_manager import ToolbarManager
+        from ui.context_menu import ContextMenuManager
+
         self._build_ui()
         self._bind_shortcuts()
 
-    def _apply_theme(self):
-        self.colors = {
-            "bg": "#1e1e2e",
-            "bg_secondary": "#313244",
-            "bg_surface": "#45475a",
-            "text": "#cdd6f4",
-            "text_dim": "#a6adc8",
-            "accent": "#89b4fa",
-            "accent_hover": "#b4d0fb",
-            "danger": "#f38ba8",
-            "success": "#a6e3a1",
-            "warning": "#fab387",
-        }
-        self.root.configure(bg=self.colors["bg"])
-        style = ttk.Style()
-        style.theme_use("clam")
-        style.configure(".", background=self.colors["bg"], foreground=self.colors["text"])
-        style.configure("TFrame", background=self.colors["bg"])
-        style.configure("TLabel", background=self.colors["bg"], foreground=self.colors["text"])
-        style.configure("TButton", background=self.colors["bg_surface"],
-                        foreground=self.colors["text"], borderwidth=0, padding=4)
-        style.map("TButton", background=[("active", self.colors["accent"])])
-        style.configure("Accent.TButton", background=self.colors["accent"], foreground="#000")
-        style.map("Accent.TButton", background=[("active", self.colors["accent_hover"])])
+    def _apply_theme(self, theme_name):
+        """Apply a UI theme"""
+        ThemeManager.apply_theme(theme_name)
+
+    def set_theme(self, theme_name):
+        """Alias for _apply_theme used by ribbon"""
+        self._apply_theme(theme_name)
 
     def _build_ui(self):
         menubar = tk.Menu(self.root, bg=self.colors["bg_secondary"], fg=self.colors["text"],
                           activebackground=self.colors["accent"], activeforeground="#000")
         self._build_menu(menubar)
         self.root.config(menu=menubar)
+
+        self.shortcut_overlay = ShortcutOverlay(self, self.root)
 
         top_frame = tk.Frame(self.root, bg=self.colors["bg"])
         top_frame.pack(side=tk.TOP, fill=tk.X)
@@ -122,13 +162,18 @@ class PDFEditor:
         main_frame = tk.Frame(self.root, bg=self.colors["bg"])
         main_frame.pack(side=tk.TOP, fill=tk.BOTH, expand=True)
 
-        self.page_panel_frame = tk.Frame(main_frame, bg=self.colors["bg_secondary"], width=140)
-        self.page_panel_frame.pack(side=tk.LEFT, fill=tk.Y)
-        self.page_panel_frame.pack_propagate(False)
-        self.page_panel = PagePanel(self, self.page_panel_frame)
+        self.left_panel = tk.Frame(main_frame, bg=self.colors["bg_secondary"], width=140)
+        self.left_panel.pack(side=tk.LEFT, fill=tk.Y)
+        self.left_panel.pack_propagate(False)
+        self.navigation_panel = NavigationPanel(self, self.left_panel)
+        self.page_panel_frame = self.left_panel
+        self.page_panel = self.navigation_panel
 
         canvas_frame = tk.Frame(main_frame, bg=self.colors["bg_surface"])
         canvas_frame.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)
+        self.canvas_frame = canvas_frame
+
+        self.find_toolbar = FindToolbar(self)
 
         h_scroll = ttk.Scrollbar(canvas_frame, orient=tk.HORIZONTAL)
         v_scroll = ttk.Scrollbar(canvas_frame, orient=tk.VERTICAL)
@@ -148,14 +193,30 @@ class PDFEditor:
         self.canvas_preview.bind("<Motion>", self.interaction_manager.on_canvas_motion)
         self.canvas_preview.bind("<Button-3>", self.interaction_manager.show_context_menu)
 
-        self.layers_panel_frame = tk.Frame(main_frame, bg=self.colors["bg_secondary"], width=200)
-        self.layers_panel_frame.pack(side=tk.RIGHT, fill=tk.Y)
-        self.layers_panel_frame.pack_propagate(False)
+        right_frame = tk.Frame(main_frame, bg=self.colors["bg_secondary"], width=200)
+        right_frame.pack(side=tk.RIGHT, fill=tk.Y)
+        right_frame.pack_propagate(False)
+
+        self.layers_panel_frame = tk.Frame(right_frame, bg=self.colors["bg_secondary"])
+        self.layers_panel_frame.pack(side=tk.TOP, fill=tk.BOTH, expand=True)
         self.layers_panel = LayersPanel(self, self.layers_panel_frame)
+
+        self.property_panel_frame = tk.Frame(right_frame, bg=self.colors["bg_secondary"])
+        self.property_panel_frame.pack(side=tk.BOTTOM, fill=tk.X, pady=(2, 0))
+        self.property_panel = PropertyPanel(self, self.property_panel_frame)
 
         status_frame = tk.Frame(self.root, bg=self.colors["bg_secondary"], height=28)
         status_frame.pack(side=tk.BOTTOM, fill=tk.X)
         self.status = create_status_bar(self, status_frame)
+        if not hasattr(self, '_status_label'):
+            self._status_label = getattr(self, 'status', None)
+        self.status = self._status_label
+
+        self.zoom_widget = ZoomWidget(self)
+        self.zoom_widget.create_widget(status_frame)
+
+        self.toolbar_manager = ToolbarManager(self)
+        self.context_menu_manager = ContextMenuManager(self)
 
     def _build_menu(self, menubar):
         t = self._t
@@ -169,8 +230,13 @@ class PDFEditor:
         file_menu.add_command(label="Export to Images", command=self.export_images)
         file_menu.add_command(label="Export to DOCX", command=self.export_docx)
         file_menu.add_command(label="Export to HTML", command=self.export_html)
+        file_menu.add_command(label="Export to SVG", command=self._export_svg)
         file_menu.add_separator()
         file_menu.add_command(label=t.get("print", "Print"), command=self.print_pdf, accelerator="Ctrl+P")
+        file_menu.add_command(label="Print All Pages", command=self._print_all)
+        file_menu.add_command(label="Print Current Page", command=self._print_current)
+        file_menu.add_command(label="Print Booklet", command=self._print_booklet)
+        file_menu.add_command(label="Print Poster", command=self._print_poster)
         file_menu.add_separator()
         file_menu.add_command(label=t.get("exit", "Exit"), command=self.root.quit)
         menubar.add_cascade(label=t.get("file", "File"), menu=file_menu)
@@ -182,6 +248,8 @@ class PDFEditor:
         edit_menu.add_command(label="Cut", command=self.cut_selected, accelerator="Ctrl+X")
         edit_menu.add_command(label="Copy", command=self.copy_selected, accelerator="Ctrl+C")
         edit_menu.add_command(label="Paste", command=self.paste_clipboard, accelerator="Ctrl+V")
+        edit_menu.add_command(label="Paste in Place", command=self._paste_in_place)
+        edit_menu.add_command(label="Paste as Text", command=self._paste_as_text)
         edit_menu.add_separator()
         edit_menu.add_command(label="Select All", command=self.select_all, accelerator="Ctrl+A")
         edit_menu.add_command(label="Deselect", command=self.deselect_all, accelerator="Escape")
@@ -205,6 +273,10 @@ class PDFEditor:
         insert_menu.add_command(label="Watermark", command=self.show_watermark_dialog)
         insert_menu.add_command(label="Header/Footer", command=self.show_header_footer_dialog)
         insert_menu.add_command(label="Form Field", command=self.show_form_field_dialog)
+        insert_menu.add_separator()
+        insert_menu.add_command(label="Barcode", command=self._add_barcode)
+        insert_menu.add_command(label="Video", command=self._add_video)
+        insert_menu.add_command(label="Audio", command=self._add_audio)
         menubar.add_cascade(label=t.get("insert", "Insert"), menu=insert_menu)
 
         annotate_menu = tk.Menu(menubar, tearoff=0, bg=self.colors["bg_secondary"], fg=self.colors["text"])
@@ -217,6 +289,13 @@ class PDFEditor:
         annotate_menu.add_command(label="Freehand", command=lambda: self.set_tool("freehand"))
         annotate_menu.add_separator()
         annotate_menu.add_command(label="Redact", command=self.mark_redaction)
+        annotate_menu.add_separator()
+        annotate_menu.add_command(label="Add Callout", command=self._add_callout)
+        annotate_menu.add_command(label="Add Text Box", command=self._add_textbox)
+        annotate_menu.add_separator()
+        annotate_menu.add_command(label="Measure Distance", command=self._measure_distance)
+        annotate_menu.add_command(label="Measure Area", command=self._measure_area)
+        annotate_menu.add_command(label="Measure Perimeter", command=self._measure_perimeter)
         menubar.add_cascade(label="Annotate", menu=annotate_menu)
 
         page_menu = tk.Menu(menubar, tearoff=0, bg=self.colors["bg_secondary"], fg=self.colors["text"])
@@ -230,6 +309,12 @@ class PDFEditor:
         page_menu.add_command(label="Crop Page", command=self.crop_page)
         page_menu.add_command(label="Merge PDFs", command=self.merge_pdfs)
         page_menu.add_command(label="Split PDF", command=self.show_split_dialog)
+        page_menu.add_separator()
+        page_menu.add_command(label="Add Bates Numbering", command=self._add_bates_numbering)
+        page_menu.add_command(label="Set Background", command=self._set_background)
+        page_menu.add_separator()
+        page_menu.add_command(label="Import Bookmarks from HTML", command=self._import_bookmarks_html)
+        page_menu.add_command(label="Export Bookmarks to HTML", command=self._export_bookmarks_html)
         menubar.add_cascade(label="Page", menu=page_menu)
 
         tools_menu = tk.Menu(menubar, tearoff=0, bg=self.colors["bg_secondary"], fg=self.colors["text"])
@@ -242,6 +327,22 @@ class PDFEditor:
         tools_menu.add_command(label="Bookmarks", command=self.show_bookmarks_dialog)
         tools_menu.add_command(label="AI: Extract Text", command=self.ai_extract_text)
         tools_menu.add_command(label="AI: Summarize", command=self.ai_summarize)
+        tools_menu.add_separator()
+        tools_menu.add_command(label="Compare Documents", command=self._compare_documents, accelerator="Ctrl+Shift+C")
+        tools_menu.add_command(label="Compress PDF", command=self._compress_pdf)
+        tools_menu.add_command(label="Optimize Images", command=self._optimize_images)
+        tools_menu.add_command(label="PDF/A Compliance", command=self._pdfa_compliance)
+        tools_menu.add_separator()
+        tools_menu.add_command(label="Spell Check", command=self._spell_check, accelerator="F7")
+        tools_menu.add_separator()
+        tools_menu.add_command(label="Read Aloud", command=self._read_aloud, accelerator="F5")
+        tools_menu.add_command(label="Read Selection", command=self._read_selection)
+        tools_menu.add_command(label="Stop Reading", command=self._stop_reading)
+        tools_menu.add_separator()
+        tools_menu.add_command(label="Accessibility Check", command=self._accessibility_check)
+        tools_menu.add_command(label="Action Wizard", command=self._action_wizard)
+        tools_menu.add_separator()
+        tools_menu.add_command(label="Full-Text Index", command=self._build_index)
         menubar.add_cascade(label="Tools", menu=tools_menu)
 
         view_menu = tk.Menu(menubar, tearoff=0, bg=self.colors["bg_secondary"], fg=self.colors["text"])
@@ -251,6 +352,10 @@ class PDFEditor:
         view_menu.add_command(label="Fit Width", command=self.zoom_width)
         view_menu.add_separator()
         view_menu.add_command(label="Toggle Grid", command=self.toggle_grid)
+        view_menu.add_separator()
+        view_menu.add_command(label="Toggle Snap to Grid", command=self._toggle_snap)
+        view_menu.add_command(label="Add Guide", command=self._add_guide)
+        view_menu.add_command(label="Clear Guides", command=self._clear_guides)
         menubar.add_cascade(label="View", menu=view_menu)
 
         help_menu = tk.Menu(menubar, tearoff=0, bg=self.colors["bg_secondary"], fg=self.colors["text"])
@@ -280,6 +385,12 @@ class PDFEditor:
         self.root.bind("<Control-Left>", lambda e: self.prev_page())
         self.root.bind("<Control-Right>", lambda e: self.next_page())
         self.root.bind("<MouseWheel>", self._on_mousewheel)
+        self.root.bind("<F5>", lambda e: self._read_aloud())
+        self.root.bind("<F7>", lambda e: self._spell_check())
+        self.root.bind("<Control-Shift-C>", lambda e: self._compare_documents())
+        self.root.bind("<Control-Shift-F>", lambda e: self._find_in_all_pages())
+        self.root.bind("<F1>", lambda e: self._show_shortcuts())
+        self.root.bind("<Control-f>", lambda e: self._show_find_toolbar())
 
     def _on_mousewheel(self, event):
         if event.delta > 0:
@@ -369,8 +480,42 @@ class PDFEditor:
         add_text_tool(self)
         self._track_action()
 
-    def start_drawing(self):
-        self.set_tool("rect")
+    def add_image_element(self):
+        from tools.image_tool import add_image_tool
+        add_image_tool(self)
+
+    def set_font_color(self, color):
+        self.formatting_manager.set_color(color)
+        if self.selected_element is not None and 0 <= self.selected_element < len(self.elements):
+            elem = self.elements[self.selected_element]
+            if hasattr(elem, 'color'):
+                elem.color = color
+                self.canvas_manager.update_preview()
+
+    def apply_stamp(self, stamp_type):
+        from models.elements import StampElement, PREDEFINED_STAMPS
+        stamp_text = stamp_type.upper()
+        for s in PREDEFINED_STAMPS:
+            if s.lower() == stamp_type.lower():
+                stamp_text = s
+                break
+        elem = StampElement(
+            text=stamp_text, x=200, y=200, w=150, h=50,
+            page=self.current_page, color="#FF0000"
+        )
+        self.add_element_at_click(200, 200, elem)
+
+    def generate_barcode(self, bc_type):
+        from models.elements import BarcodeElement
+        elem = BarcodeElement(
+            data="SAMPLE", barcode_type=bc_type,
+            x=100, y=100, w=200, h=100,
+            page=self.current_page
+        )
+        self.add_element_at_click(100, 100, elem)
+
+    def start_drawing(self, shape_type="rect"):
+        self.set_tool(shape_type)
 
     def undo(self):
         self.elements = self.undo_manager.undo(self.elements)
@@ -545,6 +690,8 @@ class PDFEditor:
             self.layers_panel.refresh()
             self.status.configure(text=f"Page {self.current_page + 1}/{self.total_pages}")
 
+    previous_page = prev_page
+
     def next_page(self):
         if self.current_page < self.total_pages - 1:
             self.current_page += 1
@@ -692,6 +839,499 @@ class PDFEditor:
             messagebox.showinfo("Summary", summary)
         else:
             messagebox.showinfo("Summary", "No text to summarize")
+
+    def _compare_documents(self):
+        if not self.current_pdf:
+            messagebox.showwarning("Compare", "Open a PDF document first.")
+            return
+        path1 = self.current_pdf
+        path2 = filedialog.askopenfilename(
+            title="Select second PDF to compare",
+            filetypes=[("PDF Files", "*.pdf")]
+        )
+        if not path2:
+            return
+        output = filedialog.asksaveasfilename(
+            title="Save comparison result",
+            defaultextension=".png",
+            filetypes=[("PNG Image", "*.png")]
+        )
+        if not output:
+            return
+        try:
+            self.compare_service.compare_files(path1, path2, output)
+            changes = self.compare_service.get_text_changes()
+            self.status.configure(text=f"Comparison saved. {len(changes)} text difference(s) found.")
+            messagebox.showinfo("Compare Documents", f"Comparison saved to:\n{output}\n{len(changes)} text difference(s) found.")
+        except Exception as e:
+            messagebox.showerror("Compare Error", str(e))
+
+    def _compress_pdf(self):
+        if not self.current_pdf:
+            messagebox.showwarning("Compress", "Open a PDF document first.")
+            return
+        output = filedialog.asksaveasfilename(
+            title="Save compressed PDF",
+            defaultextension=".pdf",
+            filetypes=[("PDF Files", "*.pdf")]
+        )
+        if not output:
+            return
+        try:
+            level = "medium"
+            info = self.compress_service.get_compression_info(self.current_pdf)
+            old_size = info.get("file_size", 0)
+            self.compress_service.compress(self.current_pdf, output, level)
+            new_size = os.path.getsize(output)
+            savings = old_size - new_size
+            self.status.configure(text=f"Compressed: {old_size} -> {new_size} bytes (saved {savings})")
+            messagebox.showinfo("Compress PDF", f"Compressed successfully.\nSaved: {savings} bytes")
+        except Exception as e:
+            messagebox.showerror("Compress Error", str(e))
+
+    def _optimize_images(self):
+        if not self.current_pdf:
+            messagebox.showwarning("Optimize", "Open a PDF document first.")
+            return
+        try:
+            self.compress_service.optimize_images(self.current_pdf, quality=75)
+            self.status.configure(text="Images optimized (quality=75)")
+            messagebox.showinfo("Optimize Images", "Images optimized successfully.")
+        except Exception as e:
+            messagebox.showerror("Optimize Error", str(e))
+
+    def _pdfa_compliance(self):
+        if not self.current_pdf:
+            messagebox.showwarning("PDF/A", "Open a PDF document first.")
+            return
+        result = self.pdfa_service.validate_pdfa(self.current_pdf)
+        is_compliant = result.get("is_compliant", False)
+        errors = result.get("errors", [])
+        profile = result.get("profile", "unknown")
+        if is_compliant:
+            messagebox.showinfo("PDF/A Compliance", f"Document is PDF/A-{profile} compliant.\nNo issues found.")
+        else:
+            msg = f"Document is NOT PDF/A compliant.\nProfile: {profile}\n\nIssues:\n"
+            for err in errors[:20]:
+                msg += f"  - {err}\n"
+            convert = messagebox.askyesno("PDF/A Compliance", msg + "\nConvert to PDF/A-1b?")
+            if convert:
+                output = filedialog.asksaveasfilename(
+                    title="Save PDF/A document",
+                    defaultextension=".pdf",
+                    filetypes=[("PDF Files", "*.pdf")]
+                )
+                if output:
+                    try:
+                        self.pdfa_service.convert_to_pdfa(self.current_pdf, output, "1b")
+                        self.status.configure(text=f"Converted to PDF/A-1b: {output}")
+                        messagebox.showinfo("PDF/A", f"Converted successfully:\n{output}")
+                    except Exception as e2:
+                        messagebox.showerror("PDF/A Error", str(e2))
+
+    def _spell_check(self):
+        if not self.current_pdf:
+            messagebox.showwarning("Spell Check", "Open a PDF document first.")
+            return
+        try:
+            import pymupdf
+            doc = pymupdf.open(self.current_pdf)
+            text = doc[self.current_page].get_text("text")
+            doc.close()
+            if not text.strip():
+                messagebox.showinfo("Spell Check", "No text found on current page.")
+                return
+            errors = self.spellcheck_service.check_text(text)
+            if not errors:
+                messagebox.showinfo("Spell Check", "No spelling errors found.")
+                self.status.configure(text="Spell check passed - no errors")
+                return
+            msg = f"Found {len(errors)} spelling issue(s):\n\n"
+            for err in errors[:20]:
+                suggestions = ", ".join(err.get("suggestions", [])[:5])
+                msg += f"  '{err['word']}' -> {suggestions}\n"
+            messagebox.showinfo("Spell Check", msg)
+            self.status.configure(text=f"Spell check: {len(errors)} issue(s) found")
+        except Exception as e:
+            messagebox.showerror("Spell Check Error", str(e))
+
+    def _read_aloud(self):
+        if not self.current_pdf:
+            messagebox.showwarning("Read Aloud", "Open a PDF document first.")
+            return
+        try:
+            self.tts_service.speak_page(self.current_page)
+            self.status.configure(text="Reading page aloud...")
+        except Exception as e:
+            messagebox.showerror("Read Aloud Error", str(e))
+
+    def _read_selection(self):
+        if not self.current_pdf:
+            messagebox.showwarning("Read Selection", "Open a PDF document first.")
+            return
+        try:
+            import pymupdf
+            doc = pymupdf.open(self.current_pdf)
+            text = doc[self.current_page].get_text("text")
+            doc.close()
+            if text.strip():
+                self.tts_service.speak(text)
+                self.status.configure(text="Reading selection aloud...")
+            else:
+                self.status.configure(text="No text to read on current page")
+        except Exception as e:
+            messagebox.showerror("Read Selection Error", str(e))
+
+    def _stop_reading(self):
+        try:
+            self.tts_service.stop()
+            self.status.configure(text="Reading stopped")
+        except Exception as e:
+            messagebox.showerror("Stop Reading Error", str(e))
+
+    def _accessibility_check(self):
+        if not self.current_pdf:
+            messagebox.showwarning("Accessibility", "Open a PDF document first.")
+            return
+        result = self.accessibility_service.check_accessibility(self.current_pdf)
+        score = result.get("score", 0)
+        issues = result.get("issues", [])
+        msg = f"Accessibility Score: {score}/100\n\nIssues ({len(issues)}):\n"
+        for issue in issues[:20]:
+            msg += f"  [{issue.get('severity', 'low').upper()}] {issue.get('message', '')}\n"
+        messagebox.showinfo("Accessibility Check", msg)
+        self.status.configure(text=f"Accessibility score: {score}/100, {len(issues)} issue(s)")
+
+    def _action_wizard(self):
+        actions = self.automation_service.list_actions()
+        if not actions:
+            messagebox.showinfo("Action Wizard", "No saved actions. Create actions via JSON configuration.")
+            return
+        msg = "Available actions:\n\n"
+        for i, name in enumerate(actions, 1):
+            msg += f"  {i}. {name}\n"
+        messagebox.showinfo("Action Wizard", msg)
+
+    def _build_index(self):
+        if not self.current_pdf:
+            messagebox.showwarning("Full-Text Index", "Open a PDF document first.")
+            return
+        try:
+            result = self.index_service.build_index(self.current_pdf)
+            total_words = result.get("total_words", 0)
+            total_pages = result.get("total_pages", 0)
+            self.status.configure(text=f"Index built: {total_words} words across {total_pages} pages")
+            messagebox.showinfo("Full-Text Index", f"Index built successfully.\n{total_words} words indexed across {total_pages} pages.")
+        except Exception as e:
+            messagebox.showerror("Index Error", str(e))
+
+    def _add_callout(self):
+        if not self.current_pdf:
+            messagebox.showwarning("Callout", "Open a PDF document first.")
+            return
+        from models.elements import TextElement
+        elem = TextElement(
+            text="Callout", x=150, y=150, size=12,
+            page=self.current_page, color="#FF6600"
+        )
+        self.add_element_at_click(150, 150, elem)
+        self.status.configure(text="Callout added - double-click to edit text")
+
+    def _add_textbox(self):
+        if not self.current_pdf:
+            messagebox.showwarning("Text Box", "Open a PDF document first.")
+            return
+        from models.elements import TextElement
+        elem = TextElement(
+            text="Text Box", x=100, y=100, size=12,
+            page=self.current_page
+        )
+        self.add_element_at_click(100, 100, elem)
+        self.status.configure(text="Text box added - double-click to edit text")
+
+    def _measure_distance(self):
+        if not self.current_pdf:
+            messagebox.showwarning("Measure", "Open a PDF document first.")
+            return
+        self.set_tool("line")
+        self.status.configure(text="Click two points to measure distance")
+
+    def _measure_area(self):
+        if not self.current_pdf:
+            messagebox.showwarning("Measure", "Open a PDF document first.")
+            return
+        self.set_tool("rect")
+        self.status.configure(text="Draw a rectangle to measure area")
+
+    def _measure_perimeter(self):
+        if not self.current_pdf:
+            messagebox.showwarning("Measure", "Open a PDF document first.")
+            return
+        self.set_tool("freehand")
+        self.status.configure(text="Draw a shape to measure perimeter")
+
+    def _add_barcode(self):
+        if not self.current_pdf:
+            messagebox.showwarning("Barcode", "Open a PDF document first.")
+            return
+        from models.elements import TextElement
+        elem = TextElement(
+            text="||| || ||| || ||", x=100, y=100, size=14,
+            page=self.current_page, font_name="Courier"
+        )
+        self.add_element_at_click(100, 100, elem)
+        self.status.configure(text="Barcode placeholder added")
+
+    def _add_video(self):
+        if not self.current_pdf:
+            messagebox.showwarning("Video", "Open a PDF document first.")
+            return
+        messagebox.showinfo("Video", "Video insertion: Select a video file to embed as a PDF annotation.")
+        self.status.configure(text="Video embed not yet supported in this version")
+
+    def _add_audio(self):
+        if not self.current_pdf:
+            messagebox.showwarning("Audio", "Open a PDF document first.")
+            return
+        messagebox.showinfo("Audio", "Audio insertion: Select an audio file to embed as a PDF annotation.")
+        self.status.configure(text="Audio embed not yet supported in this version")
+
+    def _paste_in_place(self):
+        try:
+            data = self.root.clipboard_get()
+            import json
+            obj = json.loads(data)
+            from models.elements import element_from_json
+            elem = element_from_json(obj)
+            if elem:
+                elem.page = self.current_page
+                x = getattr(elem, "x", 0)
+                y = getattr(elem, "y", 0)
+                self.add_element_at_click(x, y, elem)
+                self.status.configure(text="Pasted in place")
+        except Exception:
+            self.status.configure(text="Nothing to paste in place")
+
+    def _paste_as_text(self):
+        try:
+            data = self.root.clipboard_get()
+            from models.elements import TextElement
+            elem = TextElement(
+                text=data[:500], x=100, y=100, size=12,
+                page=self.current_page
+            )
+            self.add_element_at_click(100, 100, elem)
+            self.status.configure(text="Pasted as text element")
+        except Exception:
+            self.status.configure(text="No text to paste")
+
+    def _add_bates_numbering(self):
+        if not self.current_pdf:
+            messagebox.showwarning("Bates", "Open a PDF document first.")
+            return
+        try:
+            self.bates_service.add_bates_all_pages(
+                prefix="DOC-", start_num=1,
+                position="bottom-right", font_size=10
+            )
+            self.canvas_manager.update_preview()
+            self.status.configure(text="Bates numbering added to all pages")
+        except Exception as e:
+            messagebox.showerror("Bates Error", str(e))
+
+    def _set_background(self):
+        if not self.current_pdf:
+            messagebox.showwarning("Background", "Open a PDF document first.")
+            return
+        from tkinter import colorchooser
+        color = colorchooser.askcolor(initialcolor="#FFFFFF", title="Select background color")
+        if color[1]:
+            try:
+                self.background_service.set_solid_background(self.current_page, color[1])
+                self.canvas_manager.update_preview()
+                self.status.configure(text=f"Background set to {color[1]}")
+            except Exception as e:
+                messagebox.showerror("Background Error", str(e))
+
+    def _import_bookmarks_html(self):
+        if not self.current_pdf:
+            messagebox.showwarning("Bookmarks", "Open a PDF document first.")
+            return
+        path = filedialog.askopenfilename(
+            title="Select HTML file with bookmarks",
+            filetypes=[("HTML Files", "*.html;*.htm")]
+        )
+        if not path:
+            return
+        try:
+            bookmarks = self.bookmark_import_service.import_from_html(path)
+            self.status.configure(text=f"Imported {len(bookmarks)} bookmark(s) from HTML")
+            messagebox.showinfo("Bookmarks", f"Imported {len(bookmarks)} bookmark(s) from HTML.")
+        except Exception as e:
+            messagebox.showerror("Import Error", str(e))
+
+    def _export_bookmarks_html(self):
+        if not self.current_pdf:
+            messagebox.showwarning("Bookmarks", "Open a PDF document first.")
+            return
+        output = filedialog.asksaveasfilename(
+            title="Export bookmarks to HTML",
+            defaultextension=".html",
+            filetypes=[("HTML Files", "*.html")]
+        )
+        if not output:
+            return
+        try:
+            import pymupdf
+            doc = pymupdf.open(self.current_pdf)
+            toc = doc.get_toc(simple=True)
+            doc.close()
+            bookmarks = [{"title": t[1], "level": t[0], "page": t[2] if len(t) > 2 else 0} for t in toc]
+            self.bookmark_import_service.export_to_html(bookmarks, output)
+            self.status.configure(text=f"Exported {len(bookmarks)} bookmark(s) to HTML")
+            messagebox.showinfo("Bookmarks", f"Exported {len(bookmarks)} bookmark(s) to:\n{output}")
+        except Exception as e:
+            messagebox.showerror("Export Error", str(e))
+
+    def _export_svg(self):
+        if not self.current_pdf:
+            messagebox.showwarning("Export SVG", "Open a PDF document first.")
+            return
+        output = filedialog.asksaveasfilename(
+            title="Export to SVG",
+            defaultextension=".svg",
+            filetypes=[("SVG Files", "*.svg")]
+        )
+        if not output:
+            return
+        try:
+            import pymupdf
+            doc = pymupdf.open(self.current_pdf)
+            page = doc[self.current_page]
+            svg = page.get_svg_image(text_as_path=False)
+            with open(output, "w", encoding="utf-8") as f:
+                f.write(svg)
+            doc.close()
+            self.status.configure(text=f"Exported page {self.current_page + 1} to SVG: {output}")
+            messagebox.showinfo("Export SVG", f"Exported to:\n{output}")
+        except Exception as e:
+            messagebox.showerror("Export SVG Error", str(e))
+
+    def _print_all(self):
+        if not self.current_pdf:
+            messagebox.showwarning("Print", "Open a PDF document first.")
+            return
+        try:
+            self.print_service.print_all_pages()
+            self.status.configure(text="Printing all pages...")
+        except Exception as e:
+            messagebox.showerror("Print Error", str(e))
+
+    def _print_current(self):
+        if not self.current_pdf:
+            messagebox.showwarning("Print", "Open a PDF document first.")
+            return
+        try:
+            self.print_service.print_current_page()
+            self.status.configure(text=f"Printing page {self.current_page + 1}...")
+        except Exception as e:
+            messagebox.showerror("Print Error", str(e))
+
+    def _print_booklet(self):
+        if not self.current_pdf:
+            messagebox.showwarning("Print Booklet", "Open a PDF document first.")
+            return
+        output = filedialog.asksaveasfilename(
+            title="Save booklet PDF",
+            defaultextension=".pdf",
+            filetypes=[("PDF Files", "*.pdf")]
+        )
+        if not output:
+            return
+        try:
+            self.print_service.print_booklet(self.current_pdf, output)
+            self.status.configure(text=f"Booklet saved: {output}")
+            messagebox.showinfo("Print Booklet", f"Booklet layout saved to:\n{output}")
+        except Exception as e:
+            messagebox.showerror("Booklet Error", str(e))
+
+    def _print_poster(self):
+        if not self.current_pdf:
+            messagebox.showwarning("Print Poster", "Open a PDF document first.")
+            return
+        output = filedialog.asksaveasfilename(
+            title="Save poster PDF",
+            defaultextension=".pdf",
+            filetypes=[("PDF Files", "*.pdf")]
+        )
+        if not output:
+            return
+        try:
+            self.print_service.print_poster(self.current_pdf, output, rows=2, cols=2)
+            self.status.configure(text=f"Poster saved: {output}")
+            messagebox.showinfo("Print Poster", f"Poster layout (2x2) saved to:\n{output}")
+        except Exception as e:
+            messagebox.showerror("Poster Error", str(e))
+
+    def _toggle_snap(self):
+        """Toggle snap to grid"""
+        if hasattr(self, 'snap_service'):
+            self.snap_service.toggle_snap(not getattr(self, '_snap_enabled', False))
+            self._snap_enabled = not self._snap_enabled
+
+    def _add_guide(self):
+        """Add a guide line"""
+        if hasattr(self, 'snap_service'):
+            from tkinter import simpledialog
+            orientation = simpledialog.askstring("Guide", "Orientation (h/v):", initialvalue="h")
+            if orientation in ("h", "v"):
+                position = simpledialog.askfloat("Guide", "Position (pixels):", initialvalue=400)
+                if position:
+                    self.snap_service.add_guide(orientation, position)
+
+    def _clear_guides(self):
+        """Clear all guides"""
+        if hasattr(self, 'snap_service'):
+            self.snap_service.clear_guides()
+
+    def _find_in_all_pages(self):
+        if not self.current_pdf:
+            messagebox.showwarning("Find", "Open a PDF document first.")
+            return
+        from tkinter import simpledialog
+        query = simpledialog.askstring("Find in All Pages", "Enter search text:")
+        if not query:
+            return
+        try:
+            results = self.index_service.search_index(query)
+            if results:
+                msg = f"Found '{query}' on {len(results)} page(s):\n\n"
+                for r in results[:10]:
+                    msg += f"  Page {r['page'] + 1} (score: {r['score']})\n"
+                messagebox.showinfo("Find Results", msg)
+            else:
+                self.index_service.build_index(self.current_pdf)
+                results = self.index_service.search_index(query)
+                if results:
+                    msg = f"Found '{query}' on {len(results)} page(s):\n\n"
+                    for r in results[:10]:
+                        msg += f"  Page {r['page'] + 1} (score: {r['score']})\n"
+                    messagebox.showinfo("Find Results", msg)
+                else:
+                    messagebox.showinfo("Find Results", f"No results for '{query}'")
+            self.status.configure(text=f"Search complete for '{query}'")
+        except Exception as e:
+            messagebox.showerror("Find Error", str(e))
+
+    def _show_shortcuts(self):
+        """Toggle keyboard shortcut overlay"""
+        if hasattr(self, 'shortcut_overlay'):
+            self.shortcut_overlay.toggle()
+
+    def _show_find_toolbar(self):
+        """Show the find toolbar"""
+        if hasattr(self, 'find_toolbar'):
+            self.find_toolbar.show()
 
     def run(self):
         self.root.mainloop()

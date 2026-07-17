@@ -667,6 +667,348 @@ class AttachmentElement(BaseElement):
         )
 
 
+class MeasurementElement(BaseElement):
+    type_name = "measurement"
+
+    def __init__(self, x1=0, y1=0, x2=100, y2=0, measurement_type="distance",
+                 points_list=None, unit="mm", scale=1.0, color="#FF0000",
+                 width=2, font_size=10, show_label=True, page=0):
+        super().__init__(page)
+        self.x1 = x1
+        self.y1 = y1
+        self.x2 = x2
+        self.y2 = y2
+        self.measurement_type = measurement_type
+        self.points_list = points_list or []
+        self.unit = unit
+        self.scale = scale
+        self.color = color
+        self.width = width
+        self.font_size = font_size
+        self.show_label = show_label
+
+    def _get_pixel_length(self):
+        if self.measurement_type == "line" or self.measurement_type == "distance":
+            return math.sqrt((self.x2 - self.x1) ** 2 + (self.y2 - self.y1) ** 2)
+        if self.points_list and len(self.points_list) >= 2:
+            total = 0
+            for i in range(len(self.points_list) - 1):
+                dx = self.points_list[i + 1][0] - self.points_list[i][0]
+                dy = self.points_list[i + 1][1] - self.points_list[i][1]
+                total += math.sqrt(dx * dx + dy * dy)
+            return total
+        return 0.0
+
+    def get_length(self):
+        return self._get_pixel_length() / self.scale if self.scale else 0.0
+
+    def get_perimeter(self):
+        if self.points_list and len(self.points_list) >= 2:
+            total = 0
+            for i in range(len(self.points_list) - 1):
+                dx = self.points_list[i + 1][0] - self.points_list[i][0]
+                dy = self.points_list[i + 1][1] - self.points_list[i][1]
+                total += math.sqrt(dx * dx + dy * dy)
+            if len(self.points_list) > 2:
+                dx = self.points_list[0][0] - self.points_list[-1][0]
+                dy = self.points_list[0][1] - self.points_list[-1][1]
+                total += math.sqrt(dx * dx + dy * dy)
+            return total / self.scale if self.scale else 0.0
+        return self.get_length()
+
+    def get_area(self):
+        if self.points_list and len(self.points_list) >= 3:
+            area = 0.0
+            n = len(self.points_list)
+            for i in range(n):
+                j = (i + 1) % n
+                area += self.points_list[i][0] * self.points_list[j][1]
+                area -= self.points_list[j][0] * self.points_list[i][1]
+            return abs(area) / (2.0 * self.scale * self.scale) if self.scale else 0.0
+        return 0.0
+
+    def get_bounds(self):
+        if self.measurement_type in ("perimeter", "area") and self.points_list:
+            xs = [p[0] for p in self.points_list]
+            ys = [p[1] for p in self.points_list]
+            return (min(xs), min(ys), max(xs) - min(xs) or 5, max(ys) - min(ys) or 5)
+        x = min(self.x1, self.x2)
+        y = min(self.y1, self.y2)
+        w = abs(self.x2 - self.x1) or 5
+        h = abs(self.y2 - self.y1) or 5
+        return (x, y, w, h)
+
+    def contains_point(self, x, y):
+        bx, by, bw, bh = self.get_bounds()
+        if x < bx - 10 or x > bx + bw + 10 or y < by - 10 or y > by + bh + 10:
+            return False
+        if self.measurement_type in ("perimeter", "area") and self.points_list:
+            for px, py in self.points_list:
+                if abs(x - px) < 8 and abs(y - py) < 8:
+                    return True
+            return False
+        dx = self.x2 - self.x1
+        dy = self.y2 - self.y1
+        if dx == 0 and dy == 0:
+            return abs(x - self.x1) < 8 and abs(y - self.y1) < 8
+        t = ((x - self.x1) * dx + (y - self.y1) * dy) / (dx * dx + dy * dy)
+        t = max(0, min(1, t))
+        cx = self.x1 + t * dx
+        cy = self.y1 + t * dy
+        dist = math.sqrt((x - cx) ** 2 + (y - cy) ** 2)
+        return dist < 10
+
+    def to_tuple(self):
+        return ("measurement", {
+            "x1": self.x1, "y1": self.y1, "x2": self.x2, "y2": self.y2,
+            "measurement_type": self.measurement_type,
+            "points_list": self.points_list, "unit": self.unit,
+            "scale": self.scale, "color": self.color, "width": self.width,
+            "font_size": self.font_size, "show_label": self.show_label,
+        })
+
+    @classmethod
+    def from_params(cls, params):
+        return cls(
+            x1=params.get("x1", 0), y1=params.get("y1", 0),
+            x2=params.get("x2", 100), y2=params.get("y2", 0),
+            measurement_type=params.get("measurement_type", "distance"),
+            points_list=params.get("points_list", []),
+            unit=params.get("unit", "mm"),
+            scale=params.get("scale", 1.0),
+            color=params.get("color", "#FF0000"),
+            width=params.get("width", 2),
+            font_size=params.get("font_size", 10),
+            show_label=params.get("show_label", True),
+            page=params.get("page", 0),
+        )
+
+
+class CalloutElement(BaseElement):
+    type_name = "callout"
+
+    def __init__(self, x=0, y=0, w=150, h=80, text="",
+                 tail_x=0, tail_y=0, color="#000000",
+                 font_size=12, font_name="Arial",
+                 fill_color="#FFFFCC", border_color="#000000",
+                 border_width=1, text_color="#000000", page=0):
+        super().__init__(page)
+        self.x = x
+        self.y = y
+        self.w = w
+        self.h = h
+        self.text = text
+        self.tail_x = tail_x
+        self.tail_y = tail_y
+        self.color = color
+        self.font_size = font_size
+        self.font_name = font_name
+        self.fill_color = fill_color
+        self.border_color = border_color
+        self.border_width = border_width
+        self.text_color = text_color
+
+    def get_bounds(self):
+        min_x = min(self.x, self.tail_x)
+        min_y = min(self.y, self.tail_y)
+        max_x = max(self.x + self.w, self.tail_x)
+        max_y = max(self.y + self.h, self.tail_y)
+        return (min_x, min_y, max_x - min_x or 5, max_y - min_y or 5)
+
+    def to_tuple(self):
+        return ("callout", {
+            "x": self.x, "y": self.y, "w": self.w, "h": self.h,
+            "text": self.text, "tail_x": self.tail_x, "tail_y": self.tail_y,
+            "color": self.color, "font_size": self.font_size,
+            "font_name": self.font_name, "fill_color": self.fill_color,
+            "border_color": self.border_color, "border_width": self.border_width,
+            "text_color": self.text_color,
+        })
+
+    @classmethod
+    def from_params(cls, params):
+        return cls(
+            x=params.get("x", 0), y=params.get("y", 0),
+            w=params.get("w", 150), h=params.get("h", 80),
+            text=params.get("text", ""),
+            tail_x=params.get("tail_x", 0), tail_y=params.get("tail_y", 0),
+            color=params.get("color", "#000000"),
+            font_size=params.get("font_size", 12),
+            font_name=params.get("font_name", "Arial"),
+            fill_color=params.get("fill_color", "#FFFFCC"),
+            border_color=params.get("border_color", "#000000"),
+            border_width=params.get("border_width", 1),
+            text_color=params.get("text_color", "#000000"),
+            page=params.get("page", 0),
+        )
+
+
+class TextBoxElement(BaseElement):
+    type_name = "textbox"
+
+    def __init__(self, x=0, y=0, w=200, h=100, text="",
+                 font_size=12, font_name="Arial", color="#000000",
+                 fill_color="", border_color="#000000", border_width=1,
+                 alignment="left", padding=4, word_wrap=True, page=0):
+        super().__init__(page)
+        self.x = x
+        self.y = y
+        self.w = w
+        self.h = h
+        self.text = text
+        self.font_size = font_size
+        self.font_name = font_name
+        self.color = color
+        self.fill_color = fill_color
+        self.border_color = border_color
+        self.border_width = border_width
+        self.alignment = alignment
+        self.padding = padding
+        self.word_wrap = word_wrap
+
+    def get_bounds(self):
+        return (self.x, self.y, self.w, self.h)
+
+    def to_tuple(self):
+        return ("textbox", {
+            "x": self.x, "y": self.y, "w": self.w, "h": self.h,
+            "text": self.text, "font_size": self.font_size,
+            "font_name": self.font_name, "color": self.color,
+            "fill_color": self.fill_color, "border_color": self.border_color,
+            "border_width": self.border_width, "alignment": self.alignment,
+            "padding": self.padding, "word_wrap": self.word_wrap,
+        })
+
+    @classmethod
+    def from_params(cls, params):
+        return cls(
+            x=params.get("x", 0), y=params.get("y", 0),
+            w=params.get("w", 200), h=params.get("h", 100),
+            text=params.get("text", ""),
+            font_size=params.get("font_size", 12),
+            font_name=params.get("font_name", "Arial"),
+            color=params.get("color", "#000000"),
+            fill_color=params.get("fill_color", ""),
+            border_color=params.get("border_color", "#000000"),
+            border_width=params.get("border_width", 1),
+            alignment=params.get("alignment", "left"),
+            padding=params.get("padding", 4),
+            word_wrap=params.get("word_wrap", True),
+            page=params.get("page", 0),
+        )
+
+
+class VideoElement(BaseElement):
+    type_name = "video"
+
+    def __init__(self, x=0, y=0, w=320, h=240, file_path="",
+                 poster_image_path=None, duration=0, page=0):
+        super().__init__(page)
+        self.x = x
+        self.y = y
+        self.w = w
+        self.h = h
+        self.file_path = file_path
+        self.poster_image_path = poster_image_path
+        self.duration = duration
+
+    def get_bounds(self):
+        return (self.x, self.y, self.w, self.h)
+
+    def to_tuple(self):
+        return ("video", {
+            "x": self.x, "y": self.y, "w": self.w, "h": self.h,
+            "file_path": self.file_path,
+            "poster_image_path": self.poster_image_path,
+            "duration": self.duration,
+        })
+
+    @classmethod
+    def from_params(cls, params):
+        return cls(
+            x=params.get("x", 0), y=params.get("y", 0),
+            w=params.get("w", 320), h=params.get("h", 240),
+            file_path=params.get("file_path", ""),
+            poster_image_path=params.get("poster_image_path", None),
+            duration=params.get("duration", 0),
+            page=params.get("page", 0),
+        )
+
+
+class AudioElement(BaseElement):
+    type_name = "audio"
+
+    def __init__(self, x=0, y=0, file_path="", duration=0, page=0):
+        super().__init__(page)
+        self.x = x
+        self.y = y
+        self.file_path = file_path
+        self.duration = duration
+
+    def get_bounds(self):
+        return (self.x, self.y, 200, 40)
+
+    def to_tuple(self):
+        return ("audio", {
+            "x": self.x, "y": self.y,
+            "file_path": self.file_path, "duration": self.duration,
+        })
+
+    @classmethod
+    def from_params(cls, params):
+        return cls(
+            x=params.get("x", 0), y=params.get("y", 0),
+            file_path=params.get("file_path", ""),
+            duration=params.get("duration", 0),
+            page=params.get("page", 0),
+        )
+
+
+class BarcodeElement(BaseElement):
+    type_name = "barcode"
+
+    def __init__(self, x=0, y=0, w=200, h=100, data="",
+                 barcode_type="qr", color="#000000",
+                 background_color="#FFFFFF", show_text=True,
+                 font_size=8, page=0):
+        super().__init__(page)
+        self.x = x
+        self.y = y
+        self.w = w
+        self.h = h
+        self.data = data
+        self.barcode_type = barcode_type
+        self.color = color
+        self.background_color = background_color
+        self.show_text = show_text
+        self.font_size = font_size
+
+    def get_bounds(self):
+        return (self.x, self.y, self.w, self.h)
+
+    def to_tuple(self):
+        return ("barcode", {
+            "x": self.x, "y": self.y, "w": self.w, "h": self.h,
+            "data": self.data, "barcode_type": self.barcode_type,
+            "color": self.color, "background_color": self.background_color,
+            "show_text": self.show_text, "font_size": self.font_size,
+        })
+
+    @classmethod
+    def from_params(cls, params):
+        return cls(
+            x=params.get("x", 0), y=params.get("y", 0),
+            w=params.get("w", 200), h=params.get("h", 100),
+            data=params.get("data", ""),
+            barcode_type=params.get("barcode_type", "qr"),
+            color=params.get("color", "#000000"),
+            background_color=params.get("background_color", "#FFFFFF"),
+            show_text=params.get("show_text", True),
+            font_size=params.get("font_size", 8),
+            page=params.get("page", 0),
+        )
+
+
 _ELEMENT_TYPE_MAP = {
     "text": TextElement,
     "image": ImageElement,
@@ -686,6 +1028,12 @@ _ELEMENT_TYPE_MAP = {
     "formfield": FormFieldElement,
     "headerfooter": HeaderFooterElement,
     "attachment": AttachmentElement,
+    "measurement": MeasurementElement,
+    "callout": CalloutElement,
+    "textbox": TextBoxElement,
+    "video": VideoElement,
+    "audio": AudioElement,
+    "barcode": BarcodeElement,
 }
 
 PREDEFINED_STAMPS = [
@@ -744,6 +1092,18 @@ def element_from_json(data):
         return HeaderFooterElement.from_params(params)
     if klass is AttachmentElement:
         return AttachmentElement.from_params(params)
+    if klass is MeasurementElement:
+        return MeasurementElement.from_params(params)
+    if klass is CalloutElement:
+        return CalloutElement.from_params(params)
+    if klass is TextBoxElement:
+        return TextBoxElement.from_params(params)
+    if klass is VideoElement:
+        return VideoElement.from_params(params)
+    if klass is AudioElement:
+        return AudioElement.from_params(params)
+    if klass is BarcodeElement:
+        return BarcodeElement.from_params(params)
     return None
 
 
