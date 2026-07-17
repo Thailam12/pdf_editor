@@ -23,17 +23,34 @@ def _elem_to_params(elem):
     return {}
 
 
+def _has_xy(elem):
+    return hasattr(elem, "x") and hasattr(elem, "y")
+
+
+def _get_xy(elem):
+    if isinstance(elem, tuple):
+        p = elem[1]
+        return p.get("x", 0), p.get("y", 0)
+    if _has_xy(elem):
+        return elem.x, elem.y
+    if hasattr(elem, "get_bounds"):
+        bx, by, _, _ = elem.get_bounds()
+        return bx, by
+    return 0, 0
+
+
 class InteractionManager:
     def __init__(self, editor):
         self.editor = editor
         self.dragging = False
         self.drag_offset = None
         self.drag_orig_params = None
-
         self.resizing = False
         self.resize_handle = None
         self.resize_start = None
         self.resize_orig_params = None
+        self._freehand_drawing = False
+        self._freehand_points = []
 
     def get_resize_handle_at(self, x, y):
         canvas = self.editor.canvas_preview
@@ -59,9 +76,13 @@ class InteractionManager:
             return None
 
         items = canvas.find_overlapping(x - 5, y - 5, x + 5, y + 5)
+        all_prefixes = [
+            "text_", "img_", "shape_", "line_", "hl_", "ann_", "note_",
+            "stamp_", "sig_", "fh_", "link_", "redact_", "wm_", "ff_", "hf_",
+        ]
         for item in reversed(items):
             for tag in canvas.gettags(item):
-                for prefix in ["text_", "img_", "shape_", "line_"]:
+                for prefix in all_prefixes:
                     if tag.startswith(prefix):
                         eid = eid_from_tag(tag)
                         if eid is not None:
@@ -70,6 +91,8 @@ class InteractionManager:
         px, py = x / scale, y / scale
         for i, elem in reversed(list(enumerate(self.editor.elements))):
             if _get_elem_page(elem) != self.editor.current_page:
+                continue
+            if getattr(elem, "locked", False):
                 continue
             if isinstance(elem, tuple):
                 etype, params = elem
@@ -89,6 +112,27 @@ class InteractionManager:
         self.dragging = False
         self.resizing = False
         editor = self.editor
+        tool = getattr(editor, "active_tool", "select")
+
+        if tool == "freehand":
+            scale = editor.zoom_level / 100
+            px, py = event.x / scale, event.y / scale
+            if not self._freehand_drawing:
+                self._freehand_drawing = True
+                self._freehand_points = [(px, py)]
+            else:
+                self._freehand_points.append((px, py))
+            return
+
+        if tool == "eraser":
+            eid = self._find_element_id_at(event.x, event.y)
+            if eid is not None:
+                editor.undo_manager.save_state(editor.elements)
+                editor.elements.pop(eid)
+                editor.selected_element = None
+                editor.canvas_manager.update_preview()
+                editor.status.configure(text="Element deleted")
+            return
 
         handle = self.get_resize_handle_at(event.x, event.y)
         if handle:
@@ -120,15 +164,7 @@ class InteractionManager:
                 self.drag_offset = (event.x / scale - elem.x1,
                                     event.y / scale - elem.y1)
         else:
-            if isinstance(elem, tuple):
-                ex = elem[1].get('x', 0)
-                ey = elem[1].get('y', 0)
-            else:
-                ex, ey = elem.x, elem.y if hasattr(elem, 'x') else (0, 0)
-                if hasattr(elem, 'x') and hasattr(elem, 'y'):
-                    ex, ey = elem.x, elem.y
-                elif hasattr(elem, 'get_bounds'):
-                    ex, ey, _, _ = elem.get_bounds()
+            ex, ey = _get_xy(elem)
             self.drag_offset = (event.x / scale - ex, event.y / scale - ey)
 
         self.drag_orig_params = _elem_to_params(elem)
@@ -150,8 +186,42 @@ class InteractionManager:
 
         self.editor.canvas_manager.update_preview()
 
+    def on_canvas_release(self, event):
+        if self._freehand_drawing and self._freehand_points:
+            if len(self._freehand_points) >= 2:
+                self.editor.undo_manager.save_state(self.editor.elements)
+                from models.elements import FreehandElement
+                color = getattr(self.editor, "stroke_color", "#FF0000")
+                width = getattr(self.editor, "stroke_width", 2)
+                elem = FreehandElement(
+                    points=list(self._freehand_points),
+                    color=color, width=width,
+                    page=self.editor.current_page,
+                )
+                self.editor.elements.append(elem)
+                self.editor.canvas_manager.update_preview()
+                self.editor.status.configure(text="Freehand drawing added")
+            self._freehand_drawing = False
+            self._freehand_points = []
+            return
+
+        if self.dragging or self.resizing:
+            self.editor.undo_manager.save_state(self.editor.elements)
+            self.dragging = False
+            self.resizing = False
+
+    def on_canvas_motion(self, event):
+        if self._freehand_drawing:
+            return
+        canvas = self.editor.canvas_preview
+        if self.get_resize_handle_at(event.x, event.y):
+            canvas.configure(cursor="arrow")
+        elif self._find_element_id_at(event.x, event.y) is not None:
+            canvas.configure(cursor="hand2")
+        else:
+            canvas.configure(cursor="cross")
+
     def _do_drag_tuple(self, event, elem, scale):
-        editor = self.editor
         etype, params = elem
         if self.resizing:
             dx = (event.x - self.resize_start[0]) / scale
@@ -197,12 +267,13 @@ class InteractionManager:
         dx = (event.x - self.resize_start[0]) / scale
         dy = (event.y - self.resize_start[1]) / scale
         corner = self.resize_handle.rsplit("_", 1)[-1]
-
         etype = _get_elem_type(elem)
+
         if etype == "text":
             orig_size = self.resize_orig_params.get("size", 12)
             elem.size = max(8, int(orig_size + (dx + dy) / 2 * 0.6))
-        elif etype in ("image", "shape"):
+        elif etype in ("image", "shape", "highlight", "annotation",
+                       "stamp", "signature", "link", "redact", "formfield"):
             ow = self.resize_orig_params.get("w", 50)
             oh = self.resize_orig_params.get("h", 50)
             ox = self.resize_orig_params.get("x", 0)
@@ -227,13 +298,7 @@ class InteractionManager:
         ny = max(0, event.y / scale - self.drag_offset[1])
         etype = _get_elem_type(elem)
 
-        if etype == "text":
-            elem.x, elem.y = nx, ny
-        elif etype == "image":
-            elem.x, elem.y = nx, ny
-        elif etype == "shape":
-            elem.x, elem.y = nx, ny
-        elif etype == "line":
+        if etype == "line":
             orig = self.drag_orig_params
             dx = nx - (orig.get("x1", elem.x1) if orig else elem.x1)
             dy = ny - (orig.get("y1", elem.y1) if orig else elem.y1)
@@ -246,21 +311,27 @@ class InteractionManager:
             elem.y1 += dy
             elem.x2 += dx
             elem.y2 += dy
-
-    def on_canvas_release(self, event):
-        if self.dragging or self.resizing:
-            self.editor.undo_manager.save_state(self.editor.elements)
-            self.dragging = False
-            self.resizing = False
-
-    def on_canvas_motion(self, event):
-        canvas = self.editor.canvas_preview
-        if self.get_resize_handle_at(event.x, event.y):
-            canvas.configure(cursor="arrow")
-        elif self._find_element_id_at(event.x, event.y) is not None:
-            canvas.configure(cursor="hand2")
-        else:
-            canvas.configure(cursor="cross")
+        elif etype == "freehand":
+            orig_pts = self.drag_orig_params.get("points", [])
+            if orig_pts and hasattr(elem, "points"):
+                ox_min = min(p[0] for p in orig_pts) if orig_pts else 0
+                oy_min = min(p[1] for p in orig_pts) if orig_pts else 0
+                new_x, new_y = nx, ny
+                if self.drag_offset:
+                    new_x = event.x / scale - self.drag_offset[0]
+                    new_y = event.y / scale - self.drag_offset[1]
+                dx = new_x - ox_min
+                dy = new_y - oy_min
+                elem.points = [(p[0] + dx, p[1] + dy) for p in orig_pts]
+        elif etype == "note":
+            elem.x = nx
+            elem.y = ny
+        elif etype == "watermark":
+            elem.x = nx
+            elem.y = ny
+        elif _has_xy(elem):
+            elem.x = nx
+            elem.y = ny
 
     def show_context_menu(self, event):
         editor = self.editor
@@ -271,8 +342,40 @@ class InteractionManager:
 
         menu = tk.Menu(editor.root, tearoff=0)
         if editor.selected_element is not None:
-            menu.add_command(label="Sửa", command=editor.edit_selected_element)
-            menu.add_command(label="Xóa", command=editor.delete_selected_element)
+            elem = editor.elements[editor.selected_element]
+            etype = _get_elem_type(elem)
+            menu.add_command(label="Edit", command=editor.edit_selected_element)
+            menu.add_command(label="Delete", command=editor.delete_selected_element)
             menu.add_separator()
-        menu.add_command(label="Hủy", command=lambda: None)
+            menu.add_command(label="Bring to Front", command=lambda: self._reorder("front"))
+            menu.add_command(label="Send to Back", command=lambda: self._reorder("back"))
+            menu.add_command(label="Bring Forward", command=lambda: self._reorder("forward"))
+            menu.add_command(label="Send Backward", command=lambda: self._reorder("backward"))
+            menu.add_separator()
+            if etype == "link" and hasattr(elem, "url"):
+                menu.add_command(label="Open Link", command=lambda: editor.root.clipboard_clear() or editor.root.clipboard_append(elem.url))
+        menu.add_command(label="Cancel", command=lambda: None)
         menu.tk_popup(event.x_root, event.y_root)
+
+    def _reorder(self, direction):
+        editor = self.editor
+        idx = editor.selected_element
+        if idx is None:
+            return
+        elems = editor.elements
+        editor.undo_manager.save_state(elems)
+        if direction == "front":
+            elem = elems.pop(idx)
+            elems.append(elem)
+            editor.selected_element = len(elems) - 1
+        elif direction == "back":
+            elem = elems.pop(idx)
+            elems.insert(0, elem)
+            editor.selected_element = 0
+        elif direction == "forward" and idx < len(elems) - 1:
+            elems[idx], elems[idx + 1] = elems[idx + 1], elems[idx]
+            editor.selected_element = idx + 1
+        elif direction == "backward" and idx > 0:
+            elems[idx], elems[idx - 1] = elems[idx - 1], elems[idx]
+            editor.selected_element = idx - 1
+        editor.canvas_manager.update_preview()

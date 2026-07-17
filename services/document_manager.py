@@ -67,9 +67,6 @@ class DocumentManager:
         return bool(getattr(self.editor, "is_temp_document", False))
 
     def save_pdf(self):
-        if self._should_prompt_save_as():
-            self.save_as_pdf()
-            return
         if not self.editor.current_pdf:
             messagebox.showwarning("Cảnh báo", "Chưa có file PDF để lưu!")
             return

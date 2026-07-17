@@ -2,7 +2,7 @@ from models.elements import elements_to_json_list, elements_from_json_list
 
 
 class UndoRedoManager:
-    def __init__(self, max_history=50):
+    def __init__(self, max_history=100):
         self.undo_stack = []
         self.redo_stack = []
         self.max_history = max_history
