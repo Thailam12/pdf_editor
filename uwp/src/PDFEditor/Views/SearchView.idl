@@ -1,0 +1,12 @@
+namespace PDFEditor.Views
+{
+    [default_interface]
+    runtimeclass SearchView : Microsoft.UI.Xaml.Controls.UserControl
+    {
+        SearchView();
+
+        Void Search(String query);
+        Void ReplaceAll(String find, String replace);
+        Void ReplaceSelected(String find, String replace);
+    }
+}

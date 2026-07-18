@@ -1,0 +1,122 @@
+<?xml version="1.0" encoding="utf-8"?>
+<UserControl
+    x:Class="PDFEditor.Views.EditorView"
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:controls="using:Microsoft.UI.Xaml.Controls"
+    xmlns:pdf="using:PDFEditor.Controls">
+
+    <Grid Background="{ThemeResource ApplicationPageBackgroundThemeBrush}">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="*" />
+            <RowDefinition Height="Auto" />
+        </Grid.RowDefinitions>
+
+        <!-- Search Bar -->
+        <Grid x:Name="SearchBar" Grid.Row="0" Visibility="Collapsed"
+              Padding="8,4" Background="{ThemeResource CardBackgroundFillColorDefaultBrush}"
+              BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}" BorderThickness="0,0,0,1">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="Auto" />
+                <ColumnDefinition Width="*" />
+                <ColumnDefinition Width="Auto" />
+                <ColumnDefinition Width="Auto" />
+                <ColumnDefinition Width="Auto" />
+                <ColumnDefinition Width="Auto" />
+            </Grid.ColumnDefinitions>
+
+            <FontIcon x:Name="SearchIcon" Grid.Column="0" Glyph="&#xE721;"
+                      FontSize="14" VerticalAlignment="Center" Margin="8,0,4,0" />
+            <TextBox x:Name="SearchBox" Grid.Column="1" PlaceholderText="Search in document..."
+                     MinWidth="300" VerticalAlignment="Center"
+                     KeyDown="OnSearchBoxKeyDown" />
+            <TextBlock x:Name="SearchResultCount" Grid.Column="2"
+                       Text="0 results" VerticalAlignment="Center" Margin="8,0"
+                       Style="{StaticResource CaptionTextBlockStyle}" />
+            <Button x:Name="PrevResultBtn" Grid.Column="3" Content="&#xE73E;"
+                    Style="{StaticResource SubtleButtonStyle}" Width="32"
+                    Click="OnPrevResultClick" />
+            <Button x:Name="NextResultBtn" Grid.Column="4" Content="&#xE73D;"
+                    Style="{StaticResource SubtleButtonStyle}" Width="32"
+                    Click="OnNextResultClick" />
+            <Button x:Name="CloseSearchBtn" Grid.Column="5" Content="&#xE711;"
+                    Style="{StaticResource SubtleButtonStyle}" Width="32"
+                    Click="OnCloseSearchClick" />
+        </Grid>
+
+        <!-- PDF Canvas -->
+        <Grid Grid.Row="1" Clip="True">
+            <Grid.Background>
+                <SolidColorBrush Color="{ThemeResource SolidBackgroundFillColorBase}" />
+            </Grid.Background>
+
+            <!-- Scroll/Pan Container -->
+            <ScrollViewer x:Name="CanvasScroller"
+                          HorizontalScrollBarVisibility="Auto"
+                          VerticalScrollBarVisibility="Auto"
+                          ZoomMode="Disabled"
+                          PointerPressed="OnCanvasPointerPressed"
+                          PointerReleased="OnCanvasPointerReleased"
+                          PointerMoved="OnCanvasPointerMoved"
+                          PointerWheelChanged="OnCanvasPointerWheelChanged"
+                          DragOver="OnCanvasDragOver"
+                          Drop="OnCanvasDrop">
+
+                <Canvas x:Name="PDFCanvas" Width="1200" Height="1600">
+                    <Canvas.Background>
+                        <SolidColorBrush Color="{ThemeResource CardBackgroundFillColorDefaultBrush}" />
+                    </Canvas.Background>
+                </Canvas>
+            </ScrollViewer>
+
+            <!-- Selection Overlay -->
+            <Canvas x:Name="SelectionOverlay" IsHitTestVisible="False"
+                    Canvas.Top="0" Canvas.Left="0" />
+
+            <!-- Page Navigation Arrows -->
+            <Button x:Name="PrevPageBtn" Content="&#xE72B;"
+                    HorizontalAlignment="Left" VerticalAlignment="Center"
+                    Margin="12,0,0,0" Opacity="0.7"
+                    Style="{StaticResource SubtleButtonStyle}"
+                    Click="OnPrevPageClick" />
+
+            <Button x:Name="NextPageBtn" Content="&#xE72A;"
+                    HorizontalAlignment="Right" VerticalAlignment="Center"
+                    Margin="0,0,12,0" Opacity="0.7"
+                    Style="{StaticResource SubtleButtonStyle}"
+                    Click="OnNextPageClick" />
+        </Grid>
+
+        <!-- Zoom Controls -->
+        <Grid Grid.Row="2" Padding="8,4" HorizontalAlignment="Center">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="Auto" />
+                <ColumnDefinition Width="120" />
+                <ColumnDefinition Width="Auto" />
+                <ColumnDefinition Width="Auto" />
+                <ColumnDefinition Width="Auto" />
+                <ColumnDefinition Width="Auto" />
+            </Grid.ColumnDefinitions>
+
+            <Button x:Name="ZoomOutBtn" Grid.Column="0" Content="&#xE738;"
+                    Style="{StaticResource SubtleButtonStyle}" Width="28"
+                    Click="OnZoomOutClick" />
+            <Slider x:Name="ZoomSlider" Grid.Column="1" Minimum="10" Maximum="500"
+                    Value="100" Width="120" VerticalAlignment="Center"
+                    ValueChanged="OnZoomSliderChanged" />
+            <Button x:Name="ZoomInBtn" Grid.Column="2" Content="&#xE710;"
+                    Style="{StaticResource SubtleButtonStyle}" Width="28"
+                    Click="OnZoomInClick" />
+            <Button x:Name="ZoomFitBtn" Grid.Column="3" Content="Fit"
+                    Style="{StaticResource SubtleButtonStyle}" Padding="8,2"
+                    Click="OnZoomFitClick" />
+            <Button x:Name="ZoomWidthBtn" Grid.Column="4" Content="Width"
+                    Style="{StaticResource SubtleButtonStyle}" Padding="8,2"
+                    Click="OnZoomWidthClick" />
+            <TextBlock x:Name="ZoomLabel" Grid.Column="5" Text="100%"
+                       VerticalAlignment="Center" Margin="8,0"
+                       Style="{StaticResource CaptionTextBlockStyle}" />
+        </Grid>
+    </Grid>
+</UserControl>

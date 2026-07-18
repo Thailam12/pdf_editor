@@ -1,0 +1,23 @@
+namespace PDFEditor.Views
+{
+    [default_interface]
+    runtimeclass EditorView : Microsoft.UI.Xaml.Controls.UserControl
+    {
+        EditorView();
+
+        Double ZoomLevel{ get; set; };
+        UInt32 CurrentPage{ get; set; };
+        UInt32 TotalPages{ get; set; };
+        Boolean HasDocument{ get; };
+
+        Void LoadDocument(String filePath);
+        Void UnloadDocument();
+        Void RenderPage(UInt32 pageIndex);
+        Void ZoomToFit();
+        Void ZoomToWidth();
+        Void ZoomToHeight();
+        Void ZoomIn();
+        Void ZoomOut();
+        Void PanTo(Double x, Double y);
+    }
+}

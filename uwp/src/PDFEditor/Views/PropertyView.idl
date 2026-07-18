@@ -1,0 +1,11 @@
+namespace PDFEditor.Views
+{
+    [default_interface]
+    runtimeclass PropertyView : Microsoft.UI.Xaml.Controls.UserControl
+    {
+        PropertyView();
+
+        Void SetSelection(Object element);
+        Void ClearSelection();
+    }
+}

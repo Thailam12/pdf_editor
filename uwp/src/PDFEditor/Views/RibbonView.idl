@@ -1,0 +1,10 @@
+namespace PDFEditor.Views
+{
+    [default_interface]
+    runtimeclass RibbonView : Microsoft.UI.Xaml.Controls.UserControl
+    {
+        RibbonView();
+
+        Void SelectTab(String tabName);
+    }
+}

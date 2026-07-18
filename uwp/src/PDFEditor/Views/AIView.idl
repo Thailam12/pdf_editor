@@ -1,0 +1,11 @@
+namespace PDFEditor.Views
+{
+    [default_interface]
+    runtimeclass AIView : Microsoft.UI.Xaml.Controls.UserControl
+    {
+        AIView();
+
+        Void SendQuery(String query);
+        Void ClearChat();
+    }
+}

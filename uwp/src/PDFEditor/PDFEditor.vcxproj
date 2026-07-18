@@ -1,0 +1,217 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Project DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <Import Project="$(MSBuildExtensionsPath)\$(MSBuildToolsVersion)\Microsoft.Common.props" Condition="Exists('$(MSBuildExtensionsPath)\$(MSBuildToolsVersion)\Microsoft.Common.props')" />
+  <PropertyGroup>
+    <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
+    <Platform Condition=" '$(Platform)' == '' ">x64</Platform>
+    <ProjectGuid>{B12702AD-ABFB-343A-A199-4D744DB050D7}</ProjectGuid>
+    <RootNamespace>PDFEditor</RootNamespace>
+    <ProjectName>PDFEditor</ProjectName>
+    <Keyword>Win32Proj</Keyword>
+    <WindowsTargetPlatformVersion>10.0</WindowsTargetPlatformVersion>
+    <WindowsTargetPlatformMinVersion>10.0.19041.0</WindowsTargetPlatformMinVersion>
+    <AppContainerApplication>true</AppContainerApplication>
+    <ApplicationType>Windows Store</ApplicationType>
+    <ApplicationTypeRevision>10.0</ApplicationTypeRevision>
+    <UseWinUI>true</UseWinUI>
+    <EnablePreviewTypes>true</EnablePreviewTypes>
+    <EnableMsixTooling>true</EnableMsixTooling>
+    <CppWinRTEnabled>true</CppWinRTEnabled>
+    <CppWinRTOptimized>true</CppWinRTOptimized>
+    <CppWinRTGeneratedFilesDir>$(IntDir)\Generated Files</CppWinRTGeneratedFilesDir>
+    <WindowsAppSDKSelfContained>true</WindowsAppSDKSelfContained>
+    <WindowsPackageType>None</WindowsPackageType>
+  </PropertyGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'" Label="Configuration">
+    <ConfigurationType>Application</ConfigurationType>
+    <UseDebugLibraries>true</UseDebugLibraries>
+    <PlatformToolset>v143</PlatformToolset>
+    <CharacterSet>Unicode</CharacterSet>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'" Label="Configuration">
+    <ConfigurationType>Application</ConfigurationType>
+    <UseDebugLibraries>false</UseDebugLibraries>
+    <PlatformToolset>v143</PlatformToolset>
+    <WholeProgramOptimization>true</WholeProgramOptimization>
+    <CharacterSet>Unicode</CharacterSet>
+  </PropertyGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.props" />
+  <ImportGroup Label="ExtensionSettings">
+  </ImportGroup>
+  <ImportGroup Label="PropertySheets" Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+  </ImportGroup>
+  <ImportGroup Label="PropertySheets" Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+  </ImportGroup>
+  <PropertyGroup Label="UserMacros" />
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
+    <ClCompile>
+      <PrecompiledHeader>Use</PrecompiledHeader>
+      <PrecompiledHeaderFile>pch.h</PrecompiledHeaderFile>
+      <WarningLevel>Level4</WarningLevel>
+      <SDLCheck>true</SDLCheck>
+      <PreprocessorDefinitions>WIN32_LEAN_AND_MEAN;NOMINMAX;_DEBUG;_WINDOWS;_USRDLL;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <ConformanceMode>true</ConformanceMode>
+      <LanguageStandard>stdcpp20</LanguageStandard>
+      <AdditionalIncludeDirectories>$(ProjectDir);$(ProjectDir)Core;$(ProjectDir)Views;$(ProjectDir)Controls;$(ProjectDir)Services;$(ProjectDir)Rendering;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <RuntimeLibrary>MultiThreadedDebugDLL</RuntimeLibrary>
+    </ClCompile>
+    <Link>
+      <SubSystem>Windows</SubSystem>
+      <GenerateDebugInformation>true</GenerateDebugInformation>
+      <AdditionalDependencies>dxgi.lib;d2d1.lib;d3d11.lib;dwrite.lib;windowscodecs.lib;shlwapi.lib;oleaut32.lib;ole32.lib;uuid.lib;%(AdditionalDependencies)</AdditionalDependencies>
+    </Link>
+  </ItemDefinitionGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
+    <ClCompile>
+      <PrecompiledHeader>Use</PrecompiledHeader>
+      <PrecompiledHeaderFile>pch.h</PrecompiledHeaderFile>
+      <WarningLevel>Level4</WarningLevel>
+      <SDLCheck>true</SDLCheck>
+      <PreprocessorDefinitions>WIN32_LEAN_AND_MEAN;NOMINMAX;NDEBUG;_WINDOWS;_USRDLL;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <ConformanceMode>true</ConformanceMode>
+      <LanguageStandard>stdcpp20</LanguageStandard>
+      <AdditionalIncludeDirectories>$(ProjectDir);$(ProjectDir)Core;$(ProjectDir)Views;$(ProjectDir)Controls;$(ProjectDir)Services;$(ProjectDir)Rendering;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <RuntimeLibrary>MultiThreadedDLL</RuntimeLibrary>
+      <FunctionLevelLinking>true</FunctionLevelLinking>
+      <IntrinsicFunctions>true</IntrinsicFunctions>
+    </ClCompile>
+    <Link>
+      <SubSystem>Windows</SubSystem>
+      <EnableCOMDATFolding>true</EnableCOMDATFolding>
+      <OptimizeReferences>true</OptimizeReferences>
+      <GenerateDebugInformation>true</GenerateDebugInformation>
+      <AdditionalDependencies>dxgi.lib;d2d1.lib;d3d11.lib;dwrite.lib;windowscodecs.lib;shlwapi.lib;oleaut32.lib;ole32.lib;uuid.lib;%(AdditionalDependencies)</AdditionalDependencies>
+    </Link>
+  </ItemDefinitionGroup>
+  <ItemGroup>
+    <ClCompile Include="pch.cpp">
+      <PrecompiledHeader>Create</PrecompiledHeader>
+    </ClCompile>
+    <ClCompile Include="App.xaml.cpp" />
+    <ClCompile Include="MainWindow.xaml.cpp" />
+    <ClCompile Include="Core\Application.cpp" />
+    <ClCompile Include="Core\DocumentManager.cpp" />
+    <ClCompile Include="Core\CommandManager.cpp" />
+    <ClCompile Include="Core\SettingsManager.cpp" />
+    <ClCompile Include="Views\EditorView.cpp" />
+    <ClCompile Include="Views\RibbonView.cpp" />
+    <ClCompile Include="Views\PagePanelView.cpp" />
+    <ClCompile Include="Views\LayersView.cpp" />
+    <ClCompile Include="Views\PropertyView.cpp" />
+    <ClCompile Include="Views\AIView.cpp" />
+    <ClCompile Include="Views\SearchView.cpp" />
+    <ClCompile Include="Views\CompareView.cpp" />
+    <ClCompile Include="Views\SettingsView.cpp" />
+    <ClCompile Include="Controls\PDFCanvas.cpp" />
+    <ClCompile Include="Controls\RibbonBar.cpp" />
+    <ClCompile Include="Controls\ZoomControl.cpp" />
+    <ClCompile Include="Controls\ColorPicker.cpp" />
+    <ClCompile Include="Services\PDFService.cpp" />
+    <ClCompile Include="Services\AIService.cpp" />
+    <ClCompile Include="Services\ExportService.cpp" />
+    <ClCompile Include="Services\OCRService.cpp" />
+    <ClCompile Include="Services\PrintService.cpp" />
+    <ClCompile Include="Rendering\D2DRenderer.cpp" />
+    <ClCompile Include="Rendering\TextLayout.cpp" />
+    <ClCompile Include="Rendering\ImageLoader.cpp" />
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="pch.h" />
+    <ClInclude Include="App.xaml.h" />
+    <ClInclude Include="MainWindow.xaml.h" />
+    <ClInclude Include="Core\Application.h" />
+    <ClInclude Include="Core\DocumentManager.h" />
+    <ClInclude Include="Core\CommandManager.h" />
+    <ClInclude Include="Core\SettingsManager.h" />
+    <ClInclude Include="Views\EditorView.h" />
+    <ClInclude Include="Views\RibbonView.h" />
+    <ClInclude Include="Views\PagePanelView.h" />
+    <ClInclude Include="Views\LayersView.h" />
+    <ClInclude Include="Views\PropertyView.h" />
+    <ClInclude Include="Views\AIView.h" />
+    <ClInclude Include="Views\SearchView.h" />
+    <ClInclude Include="Views\CompareView.h" />
+    <ClInclude Include="Views\SettingsView.h" />
+    <ClInclude Include="Controls\PDFCanvas.h" />
+    <ClInclude Include="Controls\RibbonBar.h" />
+    <ClInclude Include="Controls\ZoomControl.h" />
+    <ClInclude Include="Controls\ColorPicker.h" />
+    <ClInclude Include="Services\PDFService.h" />
+    <ClInclude Include="Services\AIService.h" />
+    <ClInclude Include="Services\ExportService.h" />
+    <ClInclude Include="Services\OCRService.h" />
+    <ClInclude Include="Services\PrintService.h" />
+    <ClInclude Include="Rendering\D2DRenderer.h" />
+    <ClInclude Include="Rendering\TextLayout.h" />
+    <ClInclude Include="Rendering\ImageLoader.h" />
+  </ItemGroup>
+  <ItemGroup>
+    <Midl Include="Core\Application.idl" />
+    <Midl Include="Core\DocumentManager.idl" />
+    <Midl Include="Core\CommandManager.idl" />
+    <Midl Include="Views\EditorView.idl" />
+    <Midl Include="Views\RibbonView.idl" />
+    <Midl Include="Views\PagePanelView.idl" />
+    <Midl Include="Views\LayersView.idl" />
+    <Midl Include="Views\PropertyView.idl" />
+    <Midl Include="Views\AIView.idl" />
+    <Midl Include="Views\SearchView.idl" />
+    <Midl Include="Views\CompareView.idl" />
+    <Midl Include="Views\SettingsView.idl" />
+  </ItemGroup>
+  <ItemGroup>
+    <ApplicationDefinition Include="App.xaml">
+      <Generator>MSBuild:Compile</Generator>
+      <SubType>Designer</SubType>
+    </ApplicationDefinition>
+    <Page Include="MainWindow.xaml">
+      <Generator>MSBuild:Compile</Generator>
+      <SubType>Designer</SubType>
+    </Page>
+    <Page Include="Views\EditorView.xaml">
+      <Generator>MSBuild:Compile</Generator>
+      <SubType>Designer</SubType>
+    </Page>
+    <Page Include="Views\RibbonView.xaml">
+      <Generator>MSBuild:Compile</Generator>
+      <SubType>Designer</SubType>
+    </Page>
+    <Page Include="Views\PagePanelView.xaml">
+      <Generator>MSBuild:Compile</Generator>
+      <SubType>Designer</SubType>
+    </Page>
+    <Page Include="Views\LayersView.xaml">
+      <Generator>MSBuild:Compile</Generator>
+      <SubType>Designer</SubType>
+    </Page>
+    <Page Include="Views\PropertyView.xaml">
+      <Generator>MSBuild:Compile</Generator>
+      <SubType>Designer</SubType>
+    </Page>
+    <Page Include="Views\AIView.xaml">
+      <Generator>MSBuild:Compile</Generator>
+      <SubType>Designer</SubType>
+    </Page>
+    <Page Include="Views\SearchView.xaml">
+      <Generator>MSBuild:Compile</Generator>
+      <SubType>Designer</SubType>
+    </Page>
+    <Page Include="Views\CompareView.xaml">
+      <Generator>MSBuild:Compile</Generator>
+      <SubType>Designer</SubType>
+    </Page>
+    <Page Include="Views\SettingsView.xaml">
+      <Generator>MSBuild:Compile</Generator>
+      <SubType>Designer</SubType>
+    </Page>
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="packages.config" />
+  </ItemGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
+  <ImportGroup Label="ExtensionTargets">
+  </ImportGroup>
+</Project>

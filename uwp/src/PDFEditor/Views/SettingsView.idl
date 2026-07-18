@@ -1,0 +1,12 @@
+namespace PDFEditor.Views
+{
+    [default_interface]
+    runtimeclass SettingsView : Microsoft.UI.Xaml.Controls.UserControl
+    {
+        SettingsView();
+
+        Void LoadSettings();
+        Void SaveSettings();
+        Void ResetDefaults();
+    }
+}

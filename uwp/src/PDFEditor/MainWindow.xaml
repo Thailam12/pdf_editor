@@ -1,0 +1,152 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Window
+    x:Class="PDFEditor.MainWindow"
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:controls="using:Microsoft.UI.Xaml.Controls"
+    xmlns:views="using:PDFEditor.Views"
+    Title="PDF Editor Pro"
+    MinWidth="800"
+    MinHeight="600"
+    Width="1400"
+    Height="900"
+    ExtendsContentIntoTitleBar="True"
+    Backdrop="Mica"
+    BackdropMaterial="MicaAlt">
+
+    <Grid>
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="*" />
+        </Grid.RowDefinitions>
+
+        <TitleBar x:Name="AppTitleBar" Grid.Row="0">
+            <StackPanel Orientation="Horizontal" Padding="0,0,0,0">
+                <FontIcon Glyph="&#xE74F;" FontSize="16" Margin="12,0,8,0" />
+                <TextBlock Text="PDF Editor Pro" VerticalAlignment="Center"
+                           Style="{StaticResource CaptionTextBlockStyle}"
+                           FontWeight="SemiBold" />
+            </StackPanel>
+        </TitleBar>
+
+        <Grid Grid.Row="1">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="280" MinWidth="200" MaxWidth="500" />
+                <ColumnDefinition Width="*" />
+                <ColumnDefinition Width="320" MinWidth="250" MaxWidth="500" />
+            </Grid.ColumnDefinitions>
+
+            <Grid.ColumnDefinitions[0].Width>
+                <x:Bind x:Name="LeftPaneWidth" />
+            </Grid.ColumnDefinitions[0].Width>
+
+            <!-- Left Panel: Page Thumbnails -->
+            <views:PagePanelView x:Name="PagePanel" Grid.Column="0"
+                                 Visibility="Visible" />
+
+            <!-- Center: Tabbed Editor -->
+            <Grid Grid.Column="1">
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="Auto" />
+                    <RowDefinition Height="Auto" />
+                    <RowDefinition Height="*" />
+                    <RowDefinition Height="Auto" />
+                </Grid.RowDefinitions>
+
+                <!-- Ribbon Toolbar -->
+                <views:RibbonView x:Name="Ribbon" Grid.Row="0" />
+
+                <!-- Tab Strip -->
+                <Grid Grid.Row="1" Background="{ThemeResource CardBackgroundFillColorDefaultBrush}"
+                      BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}"
+                      BorderThickness="0,0,0,1" Padding="8,2">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="Auto" />
+                        <ColumnDefinition Width="*" />
+                        <ColumnDefinition Width="Auto" />
+                    </Grid.ColumnDefinitions>
+
+                    <Button x:Name="NewTabButton" Grid.Column="0"
+                            Content="+" Width="32" Height="28"
+                            Click="OnNewTabClick"
+                            Style="{StaticResource SubtleButtonStyle}" />
+
+                    <ScrollViewer Grid.Column="1" HorizontalScrollBarVisibility="Auto"
+                                  VerticalScrollBarVisibility="Disabled">
+                        <StackPanel x:Name="TabStrip" Orientation="Horizontal" Spacing="2" />
+                    </ScrollViewer>
+
+                    <Button x:Name="TabOptionsButton" Grid.Column="2"
+                            Content="&#xE74D;" Width="32" Height="28"
+                            Style="{StaticResource SubtleButtonStyle}" />
+                </Grid>
+
+                <!-- Editor Canvas Area -->
+                <Grid Grid.Row="2">
+                    <views:EditorView x:Name="EditorView" />
+
+                    <!-- Empty State -->
+                    <Grid x:Name="EmptyState" Visibility="Visible">
+                        <StackPanel HorizontalAlignment="Center" VerticalAlignment="Center"
+                                    Spacing="16">
+                            <FontIcon Glyph="&#xE736;" FontSize="64"
+                                      Foreground="{ThemeResource TextFillColorSecondaryBrush}" />
+                            <TextBlock Text="Drop a PDF here or press Ctrl+O to open"
+                                       Style="{StaticResource BodyLargeTextBlockStyle}"
+                                       Foreground="{ThemeResource TextFillColorSecondaryBrush}"
+                                       HorizontalTextAlignment="Center" />
+                            <TextBlock Text="PDF Editor Pro supports editing, annotating, OCR, AI-assisted analysis and more"
+                                       Style="{StaticResource CaptionTextBlockStyle}"
+                                       Foreground="{ThemeResource TextFillColorTertiaryBrush}"
+                                       HorizontalTextAlignment="Center"
+                                       MaxWidth="400" TextWrapping="Wrap" />
+                        </StackPanel>
+                    </Grid>
+                </Grid>
+
+                <!-- Status Bar -->
+                <Grid Grid.Row="3" Background="{ThemeResource CardBackgroundFillColorDefaultBrush}"
+                      BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}"
+                      BorderThickness="0,1,0,0" Padding="12,4">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="Auto" />
+                        <ColumnDefinition Width="*" />
+                        <ColumnDefinition Width="Auto" />
+                        <ColumnDefinition Width="Auto" />
+                        <ColumnDefinition Width="Auto" />
+                    </Grid.ColumnDefinitions>
+
+                    <TextBlock x:Name="StatusText" Grid.Column="0" Text="Ready"
+                               Style="{StaticResource CaptionTextBlockStyle}"
+                               VerticalAlignment="Center" />
+                    <TextBlock x:Name="PageInfoText" Grid.Column="2" Text="Page 0 / 0"
+                               Style="{StaticResource CaptionTextBlockStyle}"
+                               VerticalAlignment="Center" Margin="12,0" />
+                    <TextBlock x:Name="ZoomText" Grid.Column="3" Text="100%"
+                               Style="{StaticResource CaptionTextBlockStyle}"
+                               VerticalAlignment="Center" Margin="12,0" />
+                    <controls:FontIcon x:Name="AIStatusIcon" Grid.Column="4"
+                                       Glyph="&#xE9D9;" FontSize="14"
+                                       VerticalAlignment="Center"
+                                       ToolTipService.ToolTip="AI Engine Status" />
+                </Grid>
+            </Grid>
+
+            <!-- Right Panel: Properties -->
+            <views:PropertyView x:Name="PropertyPanel" Grid.Column="2"
+                                Visibility="Visible" />
+        </Grid>
+
+        <!-- AI Assistant Flyout -->
+        <Grid x:Name="AIFlyout" Grid.Row="1" ColumnSpan="3"
+              Visibility="Collapsed" HorizontalAlignment="Right"
+              Width="400" Padding="0,0,12,12">
+            <Grid Background="{ThemeResource CardBackgroundFillColorDefaultBrush}"
+                  BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}"
+                  BorderThickness="1" CornerRadius="8"
+                  Shadow="{ThemeResource FlyoutShadow}">
+                <views:AIView x:Name="AIAssistant" />
+            </Grid>
+        </Grid>
+    </Grid>
+</Window>

@@ -1,0 +1,75 @@
+<?xml version="1.0" encoding="utf-8"?>
+<UserControl
+    x:Class="PDFEditor.Views.SearchView"
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:controls="using:Microsoft.UI.Xaml.Controls">
+
+    <Grid Padding="12,8">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="*" />
+        </Grid.RowDefinitions>
+
+        <TextBlock Text="Search &amp; Replace" Style="{StaticResource BodyStrongTextBlockStyle}" />
+
+        <!-- Search -->
+        <Grid Grid.Row="1" Margin="0,8,0,4">
+            <TextBox x:Name="SearchInput" PlaceholderText="Search..." Width="250"
+                     HorizontalAlignment="Left" />
+            <StackPanel Orientation="Horizontal" HorizontalAlignment="Right" Spacing="4">
+                <CheckBox Content="Match Case" x:Name="MatchCaseCheck"
+                          VerticalAlignment="Center" />
+                <CheckBox Content="Whole Word" x:Name="WholeWordCheck"
+                          VerticalAlignment="Center" />
+            </StackPanel>
+        </Grid>
+
+        <!-- Replace -->
+        <Grid Grid.Row="2" Margin="0,4,0,8">
+            <Grid.RowDefinitions>
+                <RowDefinition Height="Auto" />
+                <RowDefinition Height="Auto" />
+            </Grid.RowDefinitions>
+            <TextBox x:Name="ReplaceInput" PlaceholderText="Replace with..."
+                     HorizontalAlignment="Left" Width="250" Margin="0,0,0,8" />
+            <StackPanel Grid.Row="1" Orientation="Horizontal" Spacing="4">
+                <Button Content="Find Next" Click="OnFindNextClick"
+                        Style="{StaticResource AccentButtonStyle}" Padding="12,4" />
+                <Button Content="Find All" Click="OnFindAllClick"
+                        Padding="12,4" />
+                <Button Content="Replace" Click="OnReplaceClick"
+                        Padding="12,4" />
+                <Button Content="Replace All" Click="OnReplaceAllClick"
+                        Padding="12,4" />
+            </StackPanel>
+        </Grid>
+
+        <!-- Results -->
+        <Grid Grid.Row="3">
+            <Grid.RowDefinitions>
+                <RowDefinition Height="Auto" />
+                <RowDefinition Height="*" />
+            </Grid.RowDefinitions>
+            <TextBlock x:Name="ResultCountText" Grid.Row="0" Text="No results"
+                       Style="{StaticResource CaptionTextBlockStyle}"
+                       Foreground="{ThemeResource TextFillColorSecondaryBrush}"
+                       Margin="0,0,0,4" />
+            <ListView x:Name="ResultsList" Grid.Row="1" SelectionMode="Single"
+                      ItemClick="OnResultItemClick">
+                <ListViewItem Content="Page 1: 'sample text match'">
+                    <StackPanel Orientation="Horizontal" Spacing="8">
+                        <TextBlock Text="1" FontWeight="SemiBold" Foreground="{ThemeResource SystemAccentColor}" />
+                        <StackPanel>
+                            <TextBlock Text="Page 1" Style="{StaticResource CaptionTextBlockStyle}" />
+                            <TextBlock Text="...context around sample text match..." TextWrapping="NoWrap"
+                                       MaxWidth="200" />
+                        </StackPanel>
+                    </StackPanel>
+                </ListViewItem>
+            </ListView>
+        </Grid>
+    </Grid>
+</UserControl>

@@ -1,0 +1,19 @@
+<Project>
+  <PropertyGroup>
+    <WindowsAppSDKSelfContained>true</WindowsAppSDKSelfContained>
+    <WindowsPackageType>None</WindowsPackageType>
+    <AppDesignerFolder>Properties</AppDesignerFolder>
+    <ProjectGuid>{B12702AD-ABFB-343A-A199-4D744DB050D7}</ProjectGuid>
+    <RootNamespace>PDFEditor</RootNamespace>
+    <LanguageExtensionsVersion>2.0.0</LanguageExtensionsVersion>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
+    <UseDebugLibraries>true</UseDebugLibraries>
+    <PlatformToolset>v143</PlatformToolset>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
+    <UseDebugLibraries>false</UseDebugLibraries>
+    <PlatformToolset>v143</PlatformToolset>
+    <WholeProgramOptimization>true</WholeProgramOptimization>
+  </PropertyGroup>
+</Project>

@@ -1,0 +1,10 @@
+namespace PDFEditor.Views
+{
+    [default_interface]
+    runtimeclass CompareView : Microsoft.UI.Xaml.Controls.UserControl
+    {
+        CompareView();
+
+        Void CompareDocuments(String leftPath, String rightPath);
+    }
+}

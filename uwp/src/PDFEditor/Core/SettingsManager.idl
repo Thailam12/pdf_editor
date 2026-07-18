@@ -1,0 +1,23 @@
+namespace PDFEditor.Core
+{
+    [default_interface]
+    runtimeclass SettingsManager
+    {
+        SettingsManager();
+
+        static SettingsManager GetDefault();
+
+        String GetSetting(String key);
+        Void SetSetting(String key, String value);
+
+        String Theme;
+        String Language;
+        Double DefaultZoom;
+        Boolean AutoSaveEnabled;
+        UInt32 AutoSaveIntervalSeconds;
+
+        Void Save();
+        Void Load();
+        Void ResetToDefaults();
+    }
+}

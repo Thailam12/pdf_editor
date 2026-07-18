@@ -1,0 +1,13 @@
+namespace PDFEditor.Core
+{
+    [default_interface]
+    runtimeclass Application
+    {
+        Application();
+
+        static Application GetDefault();
+        Void Initialize();
+        Void Shutdown();
+        Boolean IsInitialized{ get; };
+    }
+}

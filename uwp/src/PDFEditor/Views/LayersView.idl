@@ -1,0 +1,10 @@
+namespace PDFEditor.Views
+{
+    [default_interface]
+    runtimeclass LayersView : Microsoft.UI.Xaml.Controls.UserControl
+    {
+        LayersView();
+
+        Void RefreshLayers();
+    }
+}

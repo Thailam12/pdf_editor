@@ -1,0 +1,49 @@
+namespace PDFEditor.Core
+{
+    runtimeclass DocumentInfo
+    {
+        String FilePath;
+        String DisplayName;
+        Boolean IsModified;
+        Int32 PageCount;
+        Int32 CurrentPage;
+        DateTime LastModified;
+    }
+
+    runtimeclass DocumentTab
+    {
+        Int32 Index;
+        DocumentInfo Info;
+        Boolean IsActive;
+    }
+
+    [default_interface]
+    runtimeclass DocumentManager
+    {
+        DocumentManager();
+
+        static DocumentManager GetDefault();
+
+        DocumentInfo CurrentDocument{ get; };
+
+        DocumentInfo OpenDocument(String filePath);
+        Void PromptOpenDocument();
+        Void SaveDocument();
+        Void SaveDocumentAs();
+        Void CloseDocument(Int32 index);
+        Void NewDocument();
+
+        Boolean Undo();
+        Boolean Redo();
+
+        Windows.Foundation.Collections.IVector<DocumentTab> OpenTabs{ get; };
+        Windows.Foundation.Collections.IVector<String> RecentFiles{ get; };
+
+        Void AddRecentFile(String filePath);
+        Void ClearRecentFiles();
+
+        event Windows.Foundation.EventHandler<DocumentInfo> DocumentOpened;
+        event Windows.Foundation.EventHandler<DocumentInfo> DocumentClosed;
+        event Windows.Foundation.EventHandler<Boolean> DocumentModifiedChanged;
+    }
+}

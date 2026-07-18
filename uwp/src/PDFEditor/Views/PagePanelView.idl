@@ -1,0 +1,11 @@
+namespace PDFEditor.Views
+{
+    [default_interface]
+    runtimeclass PagePanelView : Microsoft.UI.Xaml.Controls.UserControl
+    {
+        PagePanelView();
+
+        UInt32 SelectedPageIndex{ get; set; };
+        Void RefreshThumbnails();
+    }
+}
