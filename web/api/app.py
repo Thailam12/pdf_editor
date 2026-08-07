@@ -28,6 +28,12 @@ def create_app(config=None):
 
     @app.route('/api/health')
     def health():
-        return {'status': 'ok', 'version': '1.0.0'}
+        return {
+            'status': 'ok',
+            'version': '2.1',
+            'edition': 'community',
+            'features': ['ai', 'ocr', 'fast-search'],
+            'release_notes': ['Improved search responsiveness', 'Better OCR status feedback', 'More reliable health checks']
+        }
 
     return app

@@ -10,8 +10,14 @@ from typing import Optional
 
 logger = logging.getLogger(__name__)
 
-VERSION = "1.0.0"
+VERSION = "2.1"
 APP_NAME = "pdfmind"
+FEATURES = ["ai", "ocr", "cloud-sync"]
+RELEASE_NOTES = [
+    "Improved OCR feedback and diagnostics",
+    "Faster startup and health reporting",
+    "Expanded cloud sync readiness",
+]
 
 
 def create_parser() -> argparse.ArgumentParser:
@@ -367,8 +373,14 @@ def cmd_serve(args):
 
 def cmd_health(args):
     info = {
-        "app": APP_NAME, "version": VERSION, "python": sys.version,
-        "platform": sys.platform, "cwd": os.getcwd(),
+        "app": APP_NAME,
+        "version": VERSION,
+        "edition": "community",
+        "features": FEATURES,
+        "release_notes": RELEASE_NOTES,
+        "python": sys.version,
+        "platform": sys.platform,
+        "cwd": os.getcwd(),
     }
     print(json.dumps(info, indent=2))
     return 0

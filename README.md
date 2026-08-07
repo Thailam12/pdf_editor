@@ -1,8 +1,15 @@
 # PDFMind AI — Ultimate PDF Editor
 
-**100% Free & Open Source** | MIT License | No API Keys | No Subscriptions
+**Version 2.1** | **100% Free & Open Source** | MIT License | No API Keys | No Subscriptions
 
-A Word-like super PDF editor with a 100M parameter local AI model (PDFMind 100M), built across three platforms: native Win32 (Python/tkinter), UWP (C++/WinRT), and Web (Flask+React).
+A Word-like super PDF editor with a 100M-parameter local AI model, built across three platforms: native Win32 (Python/tkinter), UWP (C++/WinRT), and Web (Flask + React). Release 2.1 focuses on better reliability, clearer OCR feedback, faster health reporting, and stronger cross-platform readiness.
+
+## Release Highlights
+
+- Improved OCR feedback and diagnostics for scanned documents
+- Faster startup and more informative health checks
+- Better cloud-sync readiness and web responsiveness
+- Updated version metadata across Win32, UWP, and Web surfaces
 
 ---
 
@@ -10,6 +17,7 @@ A Word-like super PDF editor with a 100M parameter local AI model (PDFMind 100M)
 
 | Metric | Value |
 |--------|-------|
+| **Current Release** | 2.1 |
 | **Total Source Files** | 295 |
 | **Total Lines of Code** | **52,377** |
 | **AI Model Parameters** | 100.4M |
@@ -36,7 +44,7 @@ A Word-like super PDF editor with a 100M parameter local AI model (PDFMind 100M)
 
 ### Win32 (Native Desktop)
 ```bash
-pip install -r requirements.txt
+pip install -r win32/requirements.txt
 python win32/main.py
 ```
 
@@ -47,9 +55,9 @@ Open uwp/PDFEditor.sln in Visual Studio 2022 → Build & Run
 
 ### Web (Flask + React)
 ```bash
-pip install -r requirements.txt
+pip install -r win32/requirements.txt
 python web/run_web.py
-# Open http://localhost:5000
+# Open http://127.0.0.1:5000
 ```
 
 ### Docker
@@ -246,6 +254,12 @@ pdf_editor/
 ---
 
 ## Features
+
+### Release 2.1 Highlights
+- **OCR improvements** — clearer status messages and better diagnostics while processing scanned pages
+- **Health visibility** — more informative health endpoints and startup feedback
+- **Web responsiveness** — faster search and smoother API interactions
+- **Cross-platform polish** — consistent versioning and release messaging across Win32, UWP, and Web
 
 ### AI-Powered (PDFMind 100M)
 - **PDF Summarization** — Extractive summary with TF-IDF scoring

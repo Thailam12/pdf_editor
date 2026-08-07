@@ -84,7 +84,7 @@ class Theme:
     id: str = "catppuccin_mocha"
     description: str = ""
     author: str = "PDFMind"
-    version: str = "1.0.0"
+    version: str = "2.1"
     is_dark: bool = True
     colors: ThemeColors = field(default_factory=ThemeColors)
     spacing: ThemeSpacing = field(default_factory=ThemeSpacing)

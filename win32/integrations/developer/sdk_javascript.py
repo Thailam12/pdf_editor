@@ -337,7 +337,7 @@ function log(msg) {
     def get_npm_package(self) -> dict:
         return {
             "name": "@pdfmind/sdk",
-            "version": "1.0.0",
+            "version": "2.1",
             "description": "PDFMind JavaScript SDK for PDF operations (free, MIT license)",
             "main": "dist/pdfmind-sdk.js",
             "module": "dist/pdfmind-sdk.esm.js",

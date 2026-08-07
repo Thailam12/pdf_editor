@@ -180,7 +180,7 @@
                           CornerRadius="8" Padding="16">
                         <StackPanel Spacing="8">
                             <TextBlock Text="PDF Editor Pro" Style="{StaticResource BodyStrongTextBlockStyle}" />
-                            <TextBlock Text="Version 1.0.0" Style="{StaticResource CaptionTextBlockStyle}"
+                            <TextBlock Text="Version 2.1" Style="{StaticResource CaptionTextBlockStyle}"
                                        Foreground="{ThemeResource TextFillColorSecondaryBrush}" />
                             <TextBlock Text="Built with WinUI 3, Direct2D, and PDFMind AI"
                                        Style="{StaticResource CaptionTextBlockStyle}"
@@ -189,6 +189,15 @@
                                        Style="{StaticResource CaptionTextBlockStyle}"
                                        Foreground="{ThemeResource TextFillColorTertiaryBrush}"
                                        TextWrapping="Wrap" MaxWidth="400" />
+                            <StackPanel Spacing="4" Margin="0,8,0,0">
+                                <TextBlock Text="What’s new in 2.1" Style="{StaticResource BodyStrongTextBlockStyle}" />
+                                <TextBlock Text="• Improved OCR feedback and diagnostics"
+                                           Style="{StaticResource CaptionTextBlockStyle}" />
+                                <TextBlock Text="• Faster startup and health reporting"
+                                           Style="{StaticResource CaptionTextBlockStyle}" />
+                                <TextBlock Text="• Better cloud sync readiness"
+                                           Style="{StaticResource CaptionTextBlockStyle}" />
+                            </StackPanel>
                         </StackPanel>
                     </Grid>
                 </StackPanel>

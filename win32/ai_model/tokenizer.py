@@ -258,7 +258,7 @@ class PDFMindTokenizer:
         meta = {
             "vocab_size": self.vocab_size,
             "special_tokens": self.special_tokens,
-            "version": "1.0.0",
+            "version": "2.1",
             "model_name": "PDFMind-100M",
         }
         with open(os.path.join(directory, "tokenizer_config.json"), "w") as f:

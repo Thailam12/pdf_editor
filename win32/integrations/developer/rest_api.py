@@ -94,7 +94,7 @@ class APIResponse:
 class RESTAPIServer:
     """Free and open-source REST API server with OpenAPI 3.0 spec, rate limiting, and webhooks."""
 
-    VERSION = "1.0.0"
+    VERSION = "2.1"
 
     def __init__(self, title: str = "PDFMind API", description: str = "PDF editing and management API — free and open-source"):
         self.title = title
