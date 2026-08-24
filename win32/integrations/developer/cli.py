@@ -106,6 +106,22 @@ def create_parser() -> argparse.ArgumentParser:
     p_watermark.add_argument("--rotation", type=float, default=45, help="Rotation angle")
     p_watermark.add_argument("-o", "--output", help="Output file")
 
+    p_history = subparsers.add_parser("history", help="Manage local PDF snapshots")
+    p_history.add_argument("action", choices=["create", "list"], help="History action")
+    p_history.add_argument("file", help="PDF file")
+
+    p_extract = subparsers.add_parser("extract-text", help="Extract PDF text locally")
+    p_extract.add_argument("file", help="PDF file")
+    p_extract.add_argument("-o", "--output", help="Text output file")
+
+    p_checksum = subparsers.add_parser("checksum", help="Calculate a local SHA-256 checksum")
+    p_checksum.add_argument("file", help="File to hash")
+
+    p_batch_info = subparsers.add_parser("batch-info", help="Inspect multiple PDFs locally")
+    p_batch_info.add_argument("files", nargs="+", help="PDF files to inspect")
+
+    subparsers.add_parser("diagnostics", help="Show offline runtime diagnostics")
+
     ai_parser = subparsers.add_parser("ai", help="AI-powered operations")
     ai_sub = ai_parser.add_subparsers(dest="ai_command", help="AI commands")
 
@@ -129,9 +145,9 @@ def create_parser() -> argparse.ArgumentParser:
     ai_translate.add_argument("--target-lang", required=True, help="Target language code")
     ai_translate.add_argument("-o", "--output", help="Output file")
 
-    subparsers.add_parser("serve", help="Start the web server").add_argument(
-        "--port", type=int, default=8080, help="Port")
-    subparsers.add_parser("serve").add_argument("--host", default="localhost", help="Host")
+    p_serve = subparsers.add_parser("serve", help="Start the web server")
+    p_serve.add_argument("--port", type=int, default=8080, help="Port")
+    p_serve.add_argument("--host", default="localhost", help="Host")
 
     subparsers.add_parser("health", help="Show system health info")
 
@@ -346,6 +362,52 @@ def cmd_watermark(args):
     return 0
 
 
+def cmd_history(args):
+    from win32.local_features import LocalHistory
+
+    history = LocalHistory()
+    if args.action == "create":
+        snapshot = history.snapshot(args.file)
+        print(f"Created local snapshot: {snapshot}")
+    else:
+        print(json.dumps(history.list_snapshots(args.file), indent=2))
+    return 0
+
+
+def cmd_extract_text(args):
+    from win32.local_features import extract_text
+
+    text = extract_text(args.file)
+    if args.output:
+        with open(args.output, "w", encoding="utf-8") as output:
+            output.write(text)
+        print(f"Extracted text to {args.output}")
+    else:
+        print(text)
+    return 0
+
+
+def cmd_checksum(args):
+    from win32.local_features import sha256_file
+
+    print(f"{sha256_file(args.file)}  {args.file}")
+    return 0
+
+
+def cmd_batch_info(args):
+    from win32.local_features import inspect_pdfs
+
+    print(json.dumps(inspect_pdfs(args.files), indent=2))
+    return 0
+
+
+def cmd_diagnostics(args):
+    from win32.local_features import diagnostics
+
+    print(json.dumps(diagnostics(), indent=2))
+    return 0
+
+
 def cmd_ai(args):
     if not args.ai_command:
         print("Available AI commands: summarize, ask, redact, translate", file=sys.stderr)
@@ -391,6 +453,9 @@ COMMAND_MAP = {
     "compress": cmd_compress, "ocr": cmd_ocr, "export": cmd_export,
     "info": cmd_info, "pages": cmd_pages, "encrypt": cmd_encrypt,
     "decrypt": cmd_decrypt, "sign": cmd_sign, "watermark": cmd_watermark,
+    "history": cmd_history, "extract-text": cmd_extract_text,
+    "checksum": cmd_checksum, "batch-info": cmd_batch_info,
+    "diagnostics": cmd_diagnostics,
     "ai": cmd_ai, "serve": cmd_serve, "health": cmd_health,
 }
 

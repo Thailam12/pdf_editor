@@ -46,6 +46,8 @@ A Word-like super PDF editor with a 100M-parameter local AI model, built across 
 ```bash
 pip install -r win32/requirements.txt
 python win32/main.py
+# Local-only mode is the default; remote integrations require explicit opt-in.
+python win32/main.py --local
 ```
 
 ### UWP (WinUI3 Desktop)
@@ -59,6 +61,40 @@ pip install -r win32/requirements.txt
 python web/run_web.py
 # Open http://127.0.0.1:5000
 ```
+
+### Local-First Operation
+
+PDFMind processes documents locally by default. Local AI, OCR, editing, search,
+compression, encryption, and batch operations do not require an account, API
+key, or internet connection. The Win32 app exposes `--local` explicitly and
+requires `--allow-network` to enable optional cloud or remote AI integrations.
+
+The project remains free and open source under the MIT License. Existing author
+and project credits are retained in this README and the application metadata.
+
+### Local Productivity Features
+
+```bash
+# Save and list local PDF snapshots
+python -m win32.integrations.developer.cli history create document.pdf
+python -m win32.integrations.developer.cli history list document.pdf
+
+# Extract text without uploading the document
+python -m win32.integrations.developer.cli extract-text document.pdf -o document.txt
+
+# Verify file integrity locally
+python -m win32.integrations.developer.cli checksum document.pdf
+
+# Inspect several PDFs in one local operation
+python -m win32.integrations.developer.cli batch-info *.pdf
+
+# Check local dependencies and runtime capabilities
+python -m win32.integrations.developer.cli diagnostics
+```
+
+History snapshots are stored under `~/.pdfmind/history` and include a SHA-256
+digest plus creation timestamp. No network request is needed for any of these
+commands.
 
 ### Docker
 ```bash

@@ -26,10 +26,16 @@ def main():
     parser.add_argument('--ai-model', default=None, help='Path to AI model')
     parser.add_argument('--port', type=int, default=5000, help='Web API port')
     parser.add_argument('--vulkan', action='store_true', help='Use Vulkan iGPU')
+    parser.add_argument('--local', dest='local_mode', action='store_true', default=True,
+                        help='Use local-only processing (default)')
+    parser.add_argument('--allow-network', dest='local_mode', action='store_false',
+                        help='Allow optional cloud and remote AI integrations')
     parser.add_argument('--log-level', default='INFO', choices=['DEBUG','INFO','WARNING','ERROR'])
     args = parser.parse_args()
 
     logging.getLogger().setLevel(getattr(logging, args.log_level))
+    os.environ['PDFMIND_LOCAL_MODE'] = '1' if args.local_mode else '0'
+    logger.info('Local-only mode: %s', 'enabled' if args.local_mode else 'disabled')
 
     if args.headless:
         _run_headless(args)
