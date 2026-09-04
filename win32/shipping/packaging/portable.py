@@ -16,7 +16,7 @@ logger = logging.getLogger(__name__)
 @dataclass
 class PortableConfig:
     app_name: str = "PDFMind Portable"
-    version: str = "2.1"
+    version: str = "2026.4"
     output_dir: str = "PDFMind_Portable"
     include_python: bool = True
     include_ai: bool = True

@@ -180,7 +180,7 @@
                           CornerRadius="8" Padding="16">
                         <StackPanel Spacing="8">
                             <TextBlock Text="PDF Editor Pro" Style="{StaticResource BodyStrongTextBlockStyle}" />
-                            <TextBlock Text="Version 2.1" Style="{StaticResource CaptionTextBlockStyle}"
+                            <TextBlock Text="Version 2026.4" Style="{StaticResource CaptionTextBlockStyle}"
                                        Foreground="{ThemeResource TextFillColorSecondaryBrush}" />
                             <TextBlock Text="Built with WinUI 3, Direct2D, and PDFMind AI"
                                        Style="{StaticResource CaptionTextBlockStyle}"

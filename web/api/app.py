@@ -30,7 +30,7 @@ def create_app(config=None):
     def health():
         return {
             'status': 'ok',
-            'version': '2.1',
+            'version': '2026.4',
             'edition': 'community',
             'features': ['ai', 'ocr', 'fast-search'],
             'release_notes': ['Improved search responsiveness', 'Better OCR status feedback', 'More reliable health checks']

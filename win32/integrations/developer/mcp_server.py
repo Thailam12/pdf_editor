@@ -49,7 +49,7 @@ class MCPServer:
 
     PROTOCOL_VERSION = "2024-11-05"
     SERVER_NAME = "pdfmind-mcp"
-    SERVER_VERSION = "2.1"
+    SERVER_VERSION = "2026.4"
 
     def __init__(self):
         self._tools: dict[str, MCPTool] = {}

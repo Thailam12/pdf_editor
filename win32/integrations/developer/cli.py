@@ -10,7 +10,7 @@ from typing import Optional
 
 logger = logging.getLogger(__name__)
 
-VERSION = "2.1"
+VERSION = "2026.4"
 APP_NAME = "pdfmind"
 FEATURES = ["ai", "ocr", "cloud-sync"]
 RELEASE_NOTES = [

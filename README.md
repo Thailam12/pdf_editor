@@ -1,8 +1,8 @@
 # PDFMind AI — Ultimate PDF Editor
 
-**Version 2.1** | **100% Free & Open Source** | MIT License | No API Keys | No Subscriptions
+**Version v2026.4** | **100% Free & Open Source** | MIT License | No API Keys | No Subscriptions
 
-A Word-like super PDF editor with a 100M-parameter local AI model, built across three platforms: native Win32 (Python/tkinter), UWP (C++/WinRT), and Web (Flask + React). Release 2.1 focuses on better reliability, clearer OCR feedback, faster health reporting, and stronger cross-platform readiness.
+A Word-like super PDF editor with a 100M-parameter local AI model, built across three platforms: native Win32 (Python/tkinter), UWP (C++/WinRT), and Web (Flask + React). Release v2026.4 focuses on better reliability, clearer OCR feedback, faster health reporting, and stronger cross-platform readiness.
 
 ## Release Highlights
 
@@ -17,7 +17,7 @@ A Word-like super PDF editor with a 100M-parameter local AI model, built across 
 
 | Metric | Value |
 |--------|-------|
-| **Current Release** | 2.1 |
+| **Current Release** | v2026.4 |
 | **Total Source Files** | 295 |
 | **Total Lines of Code** | **52,377** |
 | **AI Model Parameters** | 100.4M |
@@ -61,6 +61,10 @@ pip install -r win32/requirements.txt
 python web/run_web.py
 # Open http://127.0.0.1:5000
 ```
+
+The web runner requires the Web Backend packages from `win32/requirements.txt`,
+including `flask` and `flask-cors`. If your active Python environment reports
+these imports as missing, install the requirements into that same interpreter.
 
 ### Local-First Operation
 

@@ -157,7 +157,7 @@ class VirtualPDFPrinter:
             "supported_paper_sizes": list(self.PAPER_SIZES.keys()),
             "platform": platform.system(),
             "driver_type": "virtual_pdf",
-            "version": "2.1",
+            "version": "2026.4",
         }
 
     def get_completed_jobs(self) -> list[VirtualPrintJob]:

@@ -6,7 +6,6 @@ and import/export integrations that make PDFMind indispensable.
 
 from .cloud import GoogleDriveIntegration, DropboxIntegration, BoxIntegration, WebDAVIntegration
 from .office import WordImporter, ExcelImporter, PowerPointImporter, OutlookIntegration
-from .developer import RESTAPIServer, CLI, PythonSDK, JavaScriptSDK, MCPServer
 from .printing import PrintManager, VirtualPDFPrinter, LargeFormatPlotter
 from .import_export import EPUBConverter, DjVuImporter, TIFFConverter, SVGConverter, MarkdownConverter
 
@@ -17,3 +16,10 @@ __all__ = [
     "PrintManager", "VirtualPDFPrinter", "LargeFormatPlotter",
     "EPUBConverter", "DjVuImporter", "TIFFConverter", "SVGConverter", "MarkdownConverter",
 ]
+
+
+def __getattr__(name):
+    if name in {"RESTAPIServer", "CLI", "PythonSDK", "JavaScriptSDK", "MCPServer"}:
+        from . import developer
+        return getattr(developer, name)
+    raise AttributeError(f"module {__name__!r} has no attribute {name!r}")
