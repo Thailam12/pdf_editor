@@ -120,6 +120,9 @@ def create_parser() -> argparse.ArgumentParser:
     p_batch_info = subparsers.add_parser("batch-info", help="Inspect multiple PDFs locally")
     p_batch_info.add_argument("files", nargs="+", help="PDF files to inspect")
 
+    p_validate = subparsers.add_parser("validate", help="Validate a PDF locally")
+    p_validate.add_argument("file", help="PDF file to validate")
+
     subparsers.add_parser("diagnostics", help="Show offline runtime diagnostics")
 
     ai_parser = subparsers.add_parser("ai", help="AI-powered operations")
@@ -401,6 +404,33 @@ def cmd_batch_info(args):
     return 0
 
 
+def cmd_validate(args):
+    if not os.path.isfile(args.file):
+        print(f"Error: File not found: {args.file}", file=sys.stderr)
+        return 1
+    try:
+        import pymupdf
+
+        doc = pymupdf.open(args.file)
+        try:
+            result = {
+                "file": args.file,
+                "valid": True,
+                "pages": doc.page_count,
+                "size": os.path.getsize(args.file),
+            }
+        finally:
+            doc.close()
+        print(json.dumps(result, indent=2) if args.json else
+              f"Valid PDF: {args.file} ({result['pages']} pages)")
+        return 0
+    except Exception as exc:
+        result = {"file": args.file, "valid": False, "error": str(exc)}
+        print(json.dumps(result, indent=2) if args.json else
+              f"Invalid PDF: {args.file}: {exc}", file=sys.stderr)
+        return 1
+
+
 def cmd_diagnostics(args):
     from win32.local_features import diagnostics
 
@@ -455,6 +485,7 @@ COMMAND_MAP = {
     "decrypt": cmd_decrypt, "sign": cmd_sign, "watermark": cmd_watermark,
     "history": cmd_history, "extract-text": cmd_extract_text,
     "checksum": cmd_checksum, "batch-info": cmd_batch_info,
+    "validate": cmd_validate,
     "diagnostics": cmd_diagnostics,
     "ai": cmd_ai, "serve": cmd_serve, "health": cmd_health,
 }

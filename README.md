@@ -94,11 +94,18 @@ python -m win32.integrations.developer.cli batch-info *.pdf
 
 # Check local dependencies and runtime capabilities
 python -m win32.integrations.developer.cli diagnostics
+
+# Validate a PDF can be opened locally and report its page count
+python -m win32.integrations.developer.cli validate document.pdf
+
+# Request machine-readable validation output
+python -m win32.integrations.developer.cli --json validate document.pdf
 ```
 
 History snapshots are stored under `~/.pdfmind/history` and include a SHA-256
 digest plus creation timestamp. No network request is needed for any of these
-commands.
+commands. The `validate` command opens the file locally with PyMuPDF and returns
+a non-zero exit code for missing or unreadable PDFs.
 
 ### Docker
 ```bash

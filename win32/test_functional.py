@@ -28,6 +28,28 @@ class TestPDFUtils(unittest.TestCase):
         result = self.pdf_utils.get_preview_image()
         self.assertIsNone(result)
 
+    def test_save_triangle_element(self):
+        import pymupdf
+
+        with tempfile.TemporaryDirectory() as temp_dir:
+            input_path = os.path.join(temp_dir, "input.pdf")
+            output_path = os.path.join(temp_dir, "output.pdf")
+            doc = pymupdf.open()
+            doc.new_page()
+            doc.save(input_path)
+            doc.close()
+
+            self.assertTrue(self.pdf_utils.save_edited_pdf(
+                input_path,
+                output_path,
+                [{"type": "triangle", "x": 10, "y": 10, "w": 80, "h": 60}],
+            ))
+            result = pymupdf.open(output_path)
+            try:
+                self.assertEqual(result.page_count, 1)
+            finally:
+                result.close()
+
 
 class TestI18n(unittest.TestCase):
     def test_get_i18n_vi(self):

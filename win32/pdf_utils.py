@@ -130,7 +130,11 @@ class PDFUtils:
                     y = params['y']
                     w = params['w']
                     h = params['h']
-                    points = [x + w / 2, y, x, y + h, x + w, y + h]
+                    points = [
+                        (x + w / 2, y),
+                        (x, y + h),
+                        (x + w, y + h),
+                    ]
                     filled = bool(params.get('filled', False))
                     fill_color = self._normalize_color(params.get('fill_color', params.get('color', "#ff0000")))
                     page.draw_polyline(points, color=stroke, fill=(fill_color if filled else None), width=2, closePath=True)
