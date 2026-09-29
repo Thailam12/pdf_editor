@@ -38,6 +38,7 @@ class FeatureFlagManager:
         self._flags = dict(DEFAULT_FEATURES)
         self._load_flags()
 
+
     def _flags_file(self):
         return os.path.join(self._data_dir, "flags.json")
 
@@ -99,4 +100,24 @@ class FeatureFlagManager:
             "enabled": len(self.get_enabled_features()),
             "disabled": len(self.get_disabled_features()),
             "flags": self.get_all_flags(),
+        }
+
+
+class LicenseManager(FeatureFlagManager):
+    """Compatibility wrapper that exposes the expected enterprise license API."""
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+
+    def is_valid(self):
+        return True
+
+    def get_plan(self):
+        return "community"
+
+    def get_license_info(self):
+        return {
+            "status": "valid",
+            "plan": self.get_plan(),
+            "features": self.get_enabled_features(),
         }

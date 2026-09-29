@@ -3,7 +3,7 @@ import json
 import io
 from contextlib import redirect_stdout
 
-from win32.integrations.developer.cli import VERSION, cmd_health
+from win32.integrations.developer.cli import VERSION, cmd_health, cmd_encrypt
 from win32.integrations.developer.cli import cmd_validate
 
 
@@ -14,11 +14,11 @@ def test_health_output_reports_release_features():
 
     assert result == 0
     payload = json.loads(buffer.getvalue())
-    assert payload["version"] == "2026.4"
+    assert payload["version"] == "2026.6"
     assert payload["edition"] == "community"
     assert "ai" in payload["features"]
     assert "ocr" in payload["features"]
-    assert VERSION == "2026.4"
+    assert VERSION == "2026.6"
 
 
 def test_validate_reports_pdf_health(tmp_path):
@@ -38,3 +38,11 @@ def test_validate_reports_pdf_health(tmp_path):
     payload = json.loads(buffer.getvalue())
     assert payload["valid"] is True
     assert payload["pages"] == 1
+
+
+def test_legacy_encrypt_command_warns_and_still_runs(capsys):
+    result = cmd_encrypt(argparse.Namespace(file="example.pdf", password="secret", output=None, user_password=None, perms=["print"]))
+    captured = capsys.readouterr()
+
+    assert result == 0
+    assert "deprecated" in captured.err.lower()

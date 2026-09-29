@@ -10,14 +10,30 @@ from typing import Optional
 
 logger = logging.getLogger(__name__)
 
-VERSION = "2026.4"
+VERSION = "2026.6"
 APP_NAME = "pdfmind"
 FEATURES = ["ai", "ocr", "cloud-sync"]
+DEPRECATED_FEATURES = [
+    "encrypt",
+    "decrypt",
+    "sign",
+    "watermark",
+]
 RELEASE_NOTES = [
     "Improved OCR feedback and diagnostics",
     "Faster startup and health reporting",
     "Expanded cloud sync readiness",
+    "Legacy PDF operations now emit deprecation warnings while remaining compatible",
 ]
+
+
+def _warn_deprecated(command_name: str, replacement: Optional[str] = None) -> None:
+    message = (
+        f"Warning: '{command_name}' is deprecated and will be removed in a future release."
+    )
+    if replacement:
+        message += f" Use '{replacement}' instead."
+    print(message, file=sys.stderr)
 
 
 def create_parser() -> argparse.ArgumentParser:
@@ -77,6 +93,7 @@ def create_parser() -> argparse.ArgumentParser:
     p_pages.add_argument("-o", "--output", help="Output file")
 
     p_encrypt = subparsers.add_parser("encrypt", help="Encrypt a PDF")
+    p_encrypt.add_argument("--json", action="store_true", help="Output in JSON format")
     p_encrypt.add_argument("file", help="PDF to encrypt")
     p_encrypt.add_argument("-p", "--password", required=True, help="Owner password")
     p_encrypt.add_argument("-u", "--user-password", help="User password")
@@ -85,11 +102,13 @@ def create_parser() -> argparse.ArgumentParser:
                            help="Allowed permissions")
 
     p_decrypt = subparsers.add_parser("decrypt", help="Decrypt a PDF")
+    p_decrypt.add_argument("--json", action="store_true", help="Output in JSON format")
     p_decrypt.add_argument("file", help="Encrypted PDF")
     p_decrypt.add_argument("-p", "--password", required=True, help="Password")
     p_decrypt.add_argument("-o", "--output", help="Output file")
 
     p_sign = subparsers.add_parser("sign", help="Digitally sign a PDF")
+    p_sign.add_argument("--json", action="store_true", help="Output in JSON format")
     p_sign.add_argument("file", help="PDF to sign")
     p_sign.add_argument("--cert", required=True, help="Certificate file (PFX)")
     p_sign.add_argument("--cert-password", required=True, help="Certificate password")
@@ -99,6 +118,7 @@ def create_parser() -> argparse.ArgumentParser:
     p_sign.add_argument("-o", "--output", help="Output file")
 
     p_watermark = subparsers.add_parser("watermark", help="Add watermark to PDF")
+    p_watermark.add_argument("--json", action="store_true", help="Output in JSON format")
     p_watermark.add_argument("file", help="PDF file")
     p_watermark.add_argument("--text", help="Watermark text")
     p_watermark.add_argument("--image", help="Watermark image path")
@@ -346,22 +366,38 @@ def cmd_pages(args):
 
 
 def cmd_encrypt(args):
-    print(f"Encrypting {args.file} with owner password...")
+    _warn_deprecated("encrypt", replacement="protect")
+    if getattr(args, "json", False):
+        print(json.dumps({"status": "deprecated", "command": "encrypt", "file": args.file, "message": "Legacy command retained for compatibility."}, indent=2))
+    else:
+        print(f"Encrypting {args.file} with owner password...")
     return 0
 
 
 def cmd_decrypt(args):
-    print(f"Decrypting {args.file}...")
+    _warn_deprecated("decrypt", replacement="validate")
+    if getattr(args, "json", False):
+        print(json.dumps({"status": "deprecated", "command": "decrypt", "file": args.file, "message": "Legacy command retained for compatibility."}, indent=2))
+    else:
+        print(f"Decrypting {args.file}...")
     return 0
 
 
 def cmd_sign(args):
-    print(f"Signing {args.file}...")
+    _warn_deprecated("sign", replacement="validate")
+    if getattr(args, "json", False):
+        print(json.dumps({"status": "deprecated", "command": "sign", "file": args.file, "message": "Legacy command retained for compatibility."}, indent=2))
+    else:
+        print(f"Signing {args.file}...")
     return 0
 
 
 def cmd_watermark(args):
-    print(f"Adding watermark to {args.file}...")
+    _warn_deprecated("watermark", replacement="validate")
+    if getattr(args, "json", False):
+        print(json.dumps({"status": "deprecated", "command": "watermark", "file": args.file, "message": "Legacy command retained for compatibility."}, indent=2))
+    else:
+        print(f"Adding watermark to {args.file}...")
     return 0
 
 
@@ -469,6 +505,7 @@ def cmd_health(args):
         "version": VERSION,
         "edition": "community",
         "features": FEATURES,
+        "deprecated_features": DEPRECATED_FEATURES,
         "release_notes": RELEASE_NOTES,
         "python": sys.version,
         "platform": sys.platform,

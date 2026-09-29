@@ -1,2 +1,2 @@
 """PDFMind AI Web API — Flask REST endpoints."""
-__version__ = "2026.4"
+__version__ = "2026.6"

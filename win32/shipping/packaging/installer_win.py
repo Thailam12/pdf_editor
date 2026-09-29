@@ -13,7 +13,7 @@ logger = logging.getLogger(__name__)
 @dataclass
 class InstallerConfig:
     app_name: str = "PDFMind"
-    version: str = "2026.4"
+    version: str = "2026.6"
     publisher: str = "PDFMind Inc."
     publisher_display: str = "PDFMind, Inc."
     description: str = "Intelligent PDF Editor with AI"
@@ -43,7 +43,7 @@ class InstallerConfig:
 @dataclass
 class MSIXConfig:
     package_name: str = "PDFMind"
-    version: str = "2026.4.0.0"
+    version: str = "2026.6.0.0"
     publisher: str = "CN=PDFMind"
     display_name: str = "PDFMind"
     description: str = "Intelligent PDF Editor with AI"

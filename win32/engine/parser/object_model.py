@@ -963,3 +963,8 @@ class PDFDocument:
             f"PDFDocument(file={self.file_path!r}, pages={self.page_count}, "
             f"fonts={len(self.fonts)}, version={self.version!r})"
         )
+
+
+# Backwards-compatible aliases used by legacy imports.
+Document = PDFDocument
+Page = PDFPage

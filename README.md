@@ -1,8 +1,8 @@
 # PDFMind AI — Ultimate PDF Editor
 
-**Version v2026.4** | **100% Free & Open Source** | MIT License | No API Keys | No Subscriptions
+**Version v2026.6** | **100% Free & Open Source** | MIT License | No API Keys | No Subscriptions
 
-A Word-like super PDF editor with a 100M-parameter local AI model, built across three platforms: native Win32 (Python/tkinter), UWP (C++/WinRT), and Web (Flask + React). Release v2026.4 focuses on better reliability, clearer OCR feedback, faster health reporting, and stronger cross-platform readiness.
+A Word-like super PDF editor with a 100M-parameter local AI model, built across three platforms: native Win32 (Python/tkinter), UWP (C++/WinRT), and Web (Flask + React). Release v2026.6 focuses on better reliability, clearer OCR feedback, faster health reporting, stronger cross-platform readiness, and a cleaner deprecation path for legacy PDF operations.
 
 ## Release Highlights
 
@@ -17,7 +17,7 @@ A Word-like super PDF editor with a 100M-parameter local AI model, built across 
 
 | Metric | Value |
 |--------|-------|
-| **Current Release** | v2026.4 |
+| **Current Release** | v2026.6 |
 | **Total Source Files** | 295 |
 | **Total Lines of Code** | **52,377** |
 | **AI Model Parameters** | 100.4M |
@@ -75,6 +75,20 @@ requires `--allow-network` to enable optional cloud or remote AI integrations.
 
 The project remains free and open source under the MIT License. Existing author
 and project credits are retained in this README and the application metadata.
+
+### Deprecated Legacy Commands
+
+The following PDF commands remain available for compatibility, but now emit a
+clear warning and should be treated as legacy:
+
+- `encrypt`
+- `decrypt`
+- `sign`
+- `watermark`
+
+They still run for existing workflows, but they are no longer the recommended
+path for future automation. The `validate` command is the supported local
+replacement for routine PDF integrity checks.
 
 ### Local Productivity Features
 

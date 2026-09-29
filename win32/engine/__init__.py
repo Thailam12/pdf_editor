@@ -1,2 +1,2 @@
 """PDFMind AI PDF Engine — Parser, Renderer, Elements, Operations, Search, I/O."""
-__version__ = "2026.4"
+__version__ = "2026.6"

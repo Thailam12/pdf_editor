@@ -62,7 +62,7 @@ set_target_properties(pdf_renderer PROPERTIES
     PREFIX ""
     OUTPUT_NAME "pdf_renderer"
     SOVERSION 1
-    VERSION 2026.4
+    VERSION 2026.6
 )
 
 add_library(pdf_search_engine SHARED
@@ -75,7 +75,7 @@ set_target_properties(pdf_search_engine PROPERTIES
     PREFIX ""
     OUTPUT_NAME "pdf_search_engine"
     SOVERSION 1
-    VERSION 2026.4
+    VERSION 2026.6
 )
 
 add_library(pdf_compressor SHARED
@@ -88,7 +88,7 @@ set_target_properties(pdf_compressor PROPERTIES
     PREFIX ""
     OUTPUT_NAME "pdf_compressor"
     SOVERSION 1
-    VERSION 2026.4
+    VERSION 2026.6
 )
 
 add_library(pdf_ocr_preprocess SHARED
@@ -101,7 +101,7 @@ set_target_properties(pdf_ocr_preprocess PROPERTIES
     PREFIX ""
     OUTPUT_NAME "pdf_ocr_preprocess"
     SOVERSION 1
-    VERSION 2026.4
+    VERSION 2026.6
 )
 
 add_library(pdf_crypto SHARED
@@ -114,7 +114,7 @@ set_target_properties(pdf_crypto PROPERTIES
     PREFIX ""
     OUTPUT_NAME "pdf_crypto"
     SOVERSION 1
-    VERSION 2026.4
+    VERSION 2026.6
 )
 
 add_library(pdf_export SHARED
@@ -127,7 +127,7 @@ set_target_properties(pdf_export PROPERTIES
     PREFIX ""
     OUTPUT_NAME "pdf_export"
     SOVERSION 1
-    VERSION 2026.4
+    VERSION 2026.6
 )
 
 set(LIBS_OUTPUT_DIR ${CMAKE_CURRENT_SOURCE_DIR}/libs)
