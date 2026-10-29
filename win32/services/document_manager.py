@@ -44,6 +44,12 @@ class DocumentManager:
         path = filedialog.askopenfilename(filetypes=[("PDF Files", "*.pdf")])
         if not path:
             return
+        self.open_pdf_path(path)
+
+    def open_pdf_path(self, path):
+        if not path or not os.path.exists(path):
+            messagebox.showwarning("Open", f"File not found: {path}")
+            return
         self.editor.pdf_utils.load_pdf(path)
         self.editor.current_pdf = path
         self.editor.is_temp_document = False

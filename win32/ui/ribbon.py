@@ -76,7 +76,7 @@ def _make_ribbon_button(parent, icon_text, label, command=None, tooltip="", **kw
 
     if command:
         def _on_click(e, c=command):
-            if frame["state"] != "disabled":
+            if not getattr(frame, "_disabled", False):
                 c()
 
         frame.bind("<Button-1>", _on_click)
@@ -84,13 +84,13 @@ def _make_ribbon_button(parent, icon_text, label, command=None, tooltip="", **kw
         text_lbl.bind("<Button-1>", _on_click)
 
     def _on_enter(e):
-        if frame["state"] != "disabled":
+        if not getattr(frame, "_disabled", False):
             frame.configure(bg=HOVER_BG)
             icon_lbl.configure(bg=HOVER_BG)
             text_lbl.configure(bg=HOVER_BG)
 
     def _on_leave(e):
-        if frame["state"] != "disabled":
+        if not getattr(frame, "_disabled", False):
             cur_bg = BTN_BG
             frame.configure(bg=cur_bg)
             icon_lbl.configure(bg=cur_bg)
@@ -145,7 +145,7 @@ def _make_mini_button(parent, icon_text, label, command=None, tooltip="", **kw):
 
     if command:
         def _on_click(e, c=command):
-            if frame["state"] != "disabled":
+            if not getattr(frame, "_disabled", False):
                 c()
 
         frame.bind("<Button-1>", _on_click)
@@ -153,13 +153,13 @@ def _make_mini_button(parent, icon_text, label, command=None, tooltip="", **kw):
         text_lbl.bind("<Button-1>", _on_click)
 
     def _on_enter(e):
-        if frame["state"] != "disabled":
+        if not getattr(frame, "_disabled", False):
             frame.configure(bg=HOVER_BG)
             icon_lbl.configure(bg=HOVER_BG)
             text_lbl.configure(bg=HOVER_BG)
 
     def _on_leave(e):
-        if frame["state"] != "disabled":
+        if not getattr(frame, "_disabled", False):
             frame.configure(bg=BTN_BG)
             icon_lbl.configure(bg=BTN_BG)
             text_lbl.configure(bg=BTN_BG)

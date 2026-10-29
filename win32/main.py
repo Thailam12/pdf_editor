@@ -1,5 +1,5 @@
 """PDFMind AI — Ultimate PDF Editor
-Entry point for native Python/tkinter application.
+Entry point for the native PyQt6 desktop application.
 """
 import sys
 import os
@@ -8,6 +8,9 @@ import logging
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).parent))
+# The application modules import via the `win32.*` package, so the parent
+# directory (which contains this `win32` package) must be importable too.
+sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
 logging.basicConfig(
     level=logging.INFO,
@@ -52,34 +55,16 @@ def _run_headless(args):
 
 
 def _run_gui(args):
-    """Start native tkinter GUI."""
-    logger.info("Starting PDFMind GUI...")
+    """Start the native PyQt6 GUI."""
+    logger.info("Starting PDFMind GUI (PyQt6)...")
     try:
-        import tkinter as tk
-        from ui.themes.theme import apply_theme
-        root = tk.Tk()
-        root.title("PDFMind AI — Ultimate PDF Editor")
-        root.geometry("1400x900")
-        root.minsize(1024, 768)
-        apply_theme(root)
-        if args.file:
-            _open_file(root, args.file)
-        root.mainloop()
+        from win32.pyqt6_app.main_window import run
     except ImportError as e:
         logger.error(f"GUI dependencies missing: {e}")
         print("GUI not available. Run with --headless for web-only mode.")
         sys.exit(1)
 
-
-def _open_file(root, filepath):
-    """Open a PDF file in the editor."""
-    try:
-        from services.pdf_engine import PDFEngine
-        engine = PDFEngine()
-        doc = engine.load(filepath)
-        logger.info(f"Loaded: {filepath} ({len(doc.pages)} pages)")
-    except Exception as e:
-        logger.error(f"Failed to open {filepath}: {e}")
+    sys.exit(run(args.file))
 
 
 if __name__ == '__main__':

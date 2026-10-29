@@ -48,6 +48,11 @@ class FormattingManager:
         self.current_style = TextStyle()
         self.current_paragraph_style = ParagraphStyle()
 
+    @property
+    def text_style(self):
+        """Alias for :attr:`current_style` (used by the editor UI)."""
+        return self.current_style
+
     def set_bold(self, value):
         self.current_style.bold = value
 
@@ -57,8 +62,21 @@ class FormattingManager:
     def set_underline(self, value):
         self.current_style.underline = value
 
+    def toggle_bold(self):
+        self.current_style.bold = not self.current_style.bold
+
+    def toggle_italic(self):
+        self.current_style.italic = not self.current_style.italic
+
+    def toggle_underline(self):
+        self.current_style.underline = not self.current_style.underline
+
     def set_font(self, font_name):
         self.current_style.font_name = font_name
+
+    def set_font_name(self, font_name):
+        """Alias for :meth:`set_font` (used by the editor UI)."""
+        self.set_font(font_name)
 
     def set_font_size(self, size):
         self.current_style.font_size = size

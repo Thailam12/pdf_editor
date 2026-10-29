@@ -31,6 +31,7 @@ from ui.zoom_widget import ZoomWidget
 from ui.navigation_panel import NavigationPanel
 from ui.toolbar_manager import ToolbarManager
 from ui.context_menu import ContextMenuManager
+from ui.quick_access_toolbar import QuickAccessToolbar
 from ui.feature_dialogs import (
     stamp_dialog, signature_dialog, watermark_dialog,
     ocr_dialog, protect_dialog, bookmarks_dialog,
@@ -46,6 +47,23 @@ from models.elements import (
 )
 from win32.i18n import get_i18n
 from win32.easter_eggs import should_show_easter_egg, pick_easter_egg
+
+
+def create_app_root():
+    """Create the top-level application window.
+
+    Uses CustomTkinter when available so that CTk widgets (ribbon buttons,
+    quick-access toolbar, formatting bar, panels) get correct DPI scaling and
+    themed rendering. Falls back to plain tkinter if CustomTkinter is missing.
+    """
+    try:
+        import customtkinter as ctk
+    except Exception:
+        return tk.Tk()
+    ctk.set_appearance_mode("dark")
+    ctk.set_default_color_theme("dark-blue")
+    root = ctk.CTk(fg_color="#1e1e2e")
+    return root
 
 
 class PDFEditor:
@@ -147,6 +165,15 @@ class PDFEditor:
         """Alias for _apply_theme used by ribbon"""
         self._apply_theme(theme_name)
 
+    def set_status(self, text):
+        """Update the status bar label (used by QAT and other widgets)."""
+        label = getattr(self, "_status_label", None)
+        if label is not None:
+            try:
+                label.config(text=text)
+            except Exception:
+                pass
+
     def _build_ui(self):
         menubar = tk.Menu(self.root, bg=self.colors["bg_secondary"], fg=self.colors["text"],
                           activebackground=self.colors["accent"], activeforeground="#000")
@@ -157,6 +184,7 @@ class PDFEditor:
 
         top_frame = tk.Frame(self.root, bg=self.colors["bg"])
         top_frame.pack(side=tk.TOP, fill=tk.X)
+        self.quick_access = QuickAccessToolbar(self, top_frame)
         self.ribbon = create_ribbon(self, top_frame)
 
         main_frame = tk.Frame(self.root, bg=self.colors["bg"])
@@ -1338,7 +1366,7 @@ class PDFEditor:
 
 
 def main():
-    root = tk.Tk()
+    root = create_app_root()
     app = PDFEditor(root)
     app.run()
 

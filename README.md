@@ -2,10 +2,11 @@
 
 **Version v2026.6** | **100% Free & Open Source** | MIT License | No API Keys | No Subscriptions
 
-A Word-like super PDF editor with a 100M-parameter local AI model, built across three platforms: native Win32 (Python/tkinter), UWP (C++/WinRT), and Web (Flask + React). Release v2026.6 focuses on better reliability, clearer OCR feedback, faster health reporting, stronger cross-platform readiness, and a cleaner deprecation path for legacy PDF operations.
+A Word-like super PDF editor with a 100M-parameter local AI model, built across three platforms: native Win32 (Python/PyQt6), UWP (C++/WinRT), and Web (Flask + React). Release v2026.6 focuses on better reliability, clearer OCR feedback, faster health reporting, stronger cross-platform readiness, and a cleaner deprecation path for legacy PDF operations.
 
 ## Release Highlights
 
+- **New: Quick-Access Toolbar** — customizable command strip above the ribbon in the Win32 app (102-feature catalog, persistent layout)
 - Improved OCR feedback and diagnostics for scanned documents
 - Faster startup and more informative health checks
 - Better cloud-sync readiness and web responsiveness
@@ -35,7 +36,7 @@ A Word-like super PDF editor with a 100M-parameter local AI model, built across 
 | `shipping/` | 27 | 4,451 | Themes, templates, performance, packaging, Microsoft Store |
 | `enterprise/` | 17 | 2,555 | Compliance (HIPAA, GDPR, PDF/A, PDF/UA), encryption, Azure AD |
 | `ai_model/` | 25 | 3,833 | PDFMind 100M transformer, QLoRA training, ONNX/GGUF export |
-| `win32/` | 3 | 1,399 | Native Python/tkinter PDF editor |
+| `win32/` | 3 | 1,399 | Native Python/PyQt6 PDF editor |
 | `web/` | 14 | 220 | Flask REST API + React frontend |
 
 ---
@@ -270,9 +271,15 @@ pdf_editor/
 │       ├── pricing_tier.py     # All features free (MIT license)
 │       └── pitch_deck.py       # $45.7B TAM acquisition pitch
 │
-├── win32/                  # Win32 Native App (Python/tkinter)
-│   ├── main.py             # Entry point
-│   ├── editor.py           # Main editor class
+├── win32/                  # Win32 Native App (Python/PyQt6)
+│   ├── main.py             # Entry point (launches the PyQt6 GUI)
+│   ├── pyqt6_app/          # PyQt6 application package
+│   │   ├── main_window.py  # QMainWindow: menus, toolbar, docks, status bar
+│   │   ├── pdf_canvas.py   # QGraphicsView page canvas + element overlays
+│   │   ├── panels.py       # Pages / layers / properties dock panels
+│   │   ├── document_controller.py  # Qt model (PDF + elements + undo)
+│   │   └── render.py       # PyMuPDF page -> QPixmap rendering
+│   ├── editor.py           # Legacy tkinter editor (no longer launched)
 │   └── pdf_utils.py        # PDF utilities
 │
 ├── uwp/                    # UWP App (C++/WinRT + WinUI3)
@@ -368,12 +375,21 @@ pdf_editor/
 - MCP Server for AI agents
 
 ### UI
+- **Quick-Access Toolbar** — customizable top strip with default Save/Undo/Redo/Print commands
 - Catppuccin Mocha dark theme (default)
 - 10 theme options (Dracula, Nord, Solarized, etc.)
 - 50+ document templates
 - Interactive tutorials
 - Keyboard shortcuts for everything
 - Tabbed multi-document interface
+
+### Quick-Access Toolbar (Win32)
+- Defaults to **Save (Ctrl+S), Undo (Ctrl+Z), Redo (Ctrl+Y), Print (Ctrl+P)**
+- Click the **➕ Customize** button to add from a **102-command catalog** across 8 categories: File, Edit, Insert, Annotate, Page, Tools, View, Help
+- Customize dialog: checkbox feature picker with live reorder list (Move Up / Move Down / Remove) and reset-to-default
+- Right-click **➕** for a quick menu (Customize… / Reset to Default)
+- Layout persists across restarts in `~/.pdf_editor_qat.json`
+- Hover tooltips with keyboard shortcuts on every button; unavailable commands fail gracefully with a status-bar message
 
 ---
 
@@ -437,11 +453,11 @@ python -m ai_model.scripts.deploy --gguf models/pdfmind_100m_q4.gguf
 
 ## Platform Details
 
-### Win32 (Python/tkinter)
-- **File**: `win32/main.py`
-- **Dependencies**: PyMuPDF, reportlab, Pillow
+### Win32 (Python/PyQt6)
+- **File**: `win32/main.py` (launches the PyQt6 app in `win32/pyqt6_app/`)
+- **Dependencies**: PyQt6, PyMuPDF, reportlab, Pillow
 - **Theme**: Catppuccin Mocha
-- **Features**: Full PDF editing, AI assistant, all tools
+- **Features**: Full PDF editing (open/save, page rotate/delete, zoom/fit, add text/image, element select/move/delete, undo/redo), page thumbnails, layers and properties inspector
 
 ### UWP (C++/WinRT + WinUI3)
 - **File**: `uwp/PDFEditor.sln`
